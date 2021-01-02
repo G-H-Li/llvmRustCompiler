@@ -6,6 +6,6 @@ cmake_minimum_required (VERSION 3.8)
 project ("llvmRustCompiler")
 
 # 将源代码添加到此项目的可执行文件。
-add_executable (llvmRustCompiler "llvmRustCompiler.cpp" "llvmRustCompiler.h" "Lexer/token.h" "Lexer/token.cpp")
+add_executable (llvmRustCompiler "llvmRustCompiler.cpp" "llvmRustCompiler.h" "Lexer/token.h" "Lexer/token.cpp" "CodeGenerator/generator.cpp")
 
 # TODO: 如有需要，请添加测试并安装目标。
