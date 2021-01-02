@@ -10,5 +10,10 @@
 
 
 * windows:
-step1：高级系统设置->环境变量->系统环境变量。
-step2：添加新变量；变量名：LLVM_HOME 变量值：C:\path\to\your\llvm\installation
+
+    1. 高级系统设置->环境变量->系统环境变量。
+    2. 新建
+    
+    | 变量名 | 变量值 |
+    | ------| :------|
+    | `LLVM_HOME` |`C:\path\to\your\llvm\installation`|
