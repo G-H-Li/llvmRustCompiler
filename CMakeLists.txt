@@ -17,6 +17,31 @@ add_subdirectory(CodeGenerator)
 # 指定生成目标
 add_executable(llvmRustCompiler ${DIR_SRCS})
 
+# 判断环境变量
+if(NOT DEFINED ENV{LLVM_HOME})
+    message(FATAL_ERROR "$LLVM_HOME is not defined")
+endif()
+if(NOT DEFINED ENV{LLVM_DIR})
+    set(ENV{LLVM_DIR} $ENV{LLVM_HOME}/lib/cmake/llvm)
+endif()
+find_package(LLVM REQUIRED CONFIG)
+
+message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
+# Set your project compile flags.
+# E.g. if using the C++ header files
+# you will need to enable C++11 support for your compiler.
+
+include_directories(${LLVM_INCLUDE_DIRS})
+add_definitions(${LLVM_DEFINITIONS})
+
+# 找到与我们希望使用的LLVM组件相对应的库
+llvm_map_components_to_libnames(llvm_libs support core irreader)
+
+# Link against LLVM libraries
+target_link_libraries(llvmRustCompiler ${llvm_libs})
+
 # 添加链接库
 target_link_libraries(llvmRustCompiler Lexer)
 target_link_libraries(llvmRustCompiler Parser)
