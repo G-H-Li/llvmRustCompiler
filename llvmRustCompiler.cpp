@@ -2,11 +2,17 @@
 //
 
 #include "llvmRustCompiler.h"
-
+#include "Lexer/token.h"
 using namespace std;
 
 int main()
 {
-	cout << "Hello CMake." << endl;
-	return 0;
+    BinopPrecedence['<'] = 10;
+    BinopPrecedence['+'] = 20;
+    BinopPrecedence['-'] = 20;
+    BinopPrecedence['*'] = 40;
+
+    MainLoop();
+
+    return 0;
 }
