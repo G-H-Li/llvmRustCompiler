@@ -13,6 +13,7 @@ aux_source_directory(. DIR_SRCS)
 add_subdirectory(Lexer)
 add_subdirectory(Parser)
 add_subdirectory(CodeGenerator)
+add_subdirectory(Error)
 
 # 指定生成目标
 add_executable(llvmRustCompiler ${DIR_SRCS})
@@ -37,15 +38,22 @@ include_directories(${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
 # 找到与我们希望使用的LLVM组件相对应的库
-llvm_map_components_to_libnames(llvm_libs support core irreader)
-
-# Link against LLVM libraries
-target_link_libraries(llvmRustCompiler ${llvm_libs})
+llvm_map_components_to_libnames(llvm_libs 
+    Support 
+    Core
+    MC
+    nativecodegen
+    irreader)
 
 # 添加链接库
-target_link_libraries(llvmRustCompiler Lexer)
-target_link_libraries(llvmRustCompiler Parser)
-target_link_libraries(llvmRustCompiler Generator)
-target_link_libraries(llvmRustCompiler Error)
+target_link_libraries(llvmRustCompiler PUBLIC
+    ${llvm_libs}
+    Error
+    Lexer
+    Parser
+    Generator)
+
+
+
 
 # TODO: 如有需要，请添加测试并安装目标。
