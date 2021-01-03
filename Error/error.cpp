@@ -3,7 +3,7 @@
 void llvmRustCompiler::errorToken(const std::string& msg)
 {
 	std::cerr << "Token Error:" << msg << std::endl;
-	//Scanner::setErrorFlag(true);
+	Scanner::setErrorFlag(true);
 }
 
 void llvmRustCompiler::errorToken(const Token& token, const std::string& msg)

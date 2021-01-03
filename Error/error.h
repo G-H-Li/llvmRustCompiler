@@ -9,6 +9,7 @@
 #include<iostream>
 #include <string>
 #include "..\Lexer\token.h"
+#include "..\Lexer\scanner.h"
 
 namespace llvmRustCompiler
 {
