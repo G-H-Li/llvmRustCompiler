@@ -11,7 +11,7 @@ int main()
     llvmRustCompiler::Scanner scanner("fileAddress");
     scanner.getNextToken();
 
-    while (!llvmRustCompiler::Scanner::getErrorFlag) {
+    while (!llvmRustCompiler::Scanner::getErrorFlag()) {
         scanner.getToken().dump();
         scanner.getNextToken();
         if (scanner.getToken().getTokenType() == llvmRustCompiler::TokenType::tok_eof)
