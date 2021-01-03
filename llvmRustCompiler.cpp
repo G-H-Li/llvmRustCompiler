@@ -2,11 +2,18 @@
 //
 
 #include "llvmRustCompiler.h"
-
 using namespace std;
 
 int main()
 {
-	cout << "Hello CMake." << endl;
-	return 0;
+    string fileName = ".\lexerTest.rs";//使用绝对路径
+    llvmRustCompiler::Scanner scanner(fileName);
+    scanner.getNextToken();
+
+    while (scanner.getToken().getTokenType() != llvmRustCompiler::TokenType::tok_eof)
+    {
+        scanner.getToken().dump();
+        scanner.getNextToken();
+    }
+    return 0;
 }
