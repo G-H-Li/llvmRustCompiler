@@ -6,7 +6,7 @@ void llvmRustCompiler::errorToken(const std::string& msg)
 	//Scanner::setErrorFlag(true);
 }
 
-void llvmRustCompiler::errorToken(const token& token, const std::string& msg)
+void llvmRustCompiler::errorToken(const Token& token, const std::string& msg)
 {
 }
 
@@ -19,3 +19,4 @@ void llvmRustCompiler::errorGenerator(const std::string& msg)
 {
 	std::cerr << "Generator Error:" << msg << std::endl;
 }
+

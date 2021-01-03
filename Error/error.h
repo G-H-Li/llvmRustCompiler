@@ -15,7 +15,7 @@ namespace llvmRustCompiler
 	// 使用字符串进行错误词法错误输出
 	extern void errorToken(const std::string& msg);
 	// 使用token进行错误词法错误输出
-	extern void errorToken(const token& token, const std::string& msg);
+	extern void errorToken(const Token& token, const std::string& msg);
 	//使用字符串进行错误语法错误输出
 	extern void errorSyntax(const std::string& msg);
 	
