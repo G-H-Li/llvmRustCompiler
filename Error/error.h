@@ -6,6 +6,7 @@
 * latest date:2021/1/3
 */
 
+#include<iostream>
 #include <string>
 #include "..\Lexer\token.h"
 
