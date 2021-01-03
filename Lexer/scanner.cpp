@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <cctype>
 #include "scanner.h"
-#include "Error/error.h"
 
 namespace llvmRustCompiler
 {

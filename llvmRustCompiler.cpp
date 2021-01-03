@@ -2,12 +2,11 @@
 //
 
 #include "llvmRustCompiler.h"
-#include "scanner.h"
 using namespace std;
 
 int main()
 {
-    string fileName = "D:\\CodeFile\\lexerTest.txt";//使用绝对路径
+    string fileName = ".\lexerTest.rs";//使用绝对路径
     llvmRustCompiler::Scanner scanner(fileName);
     scanner.getNextToken();
 

@@ -10,8 +10,9 @@
 
 #include <fstream>
 #include <string>
-#include "Lexer/token.h"
-#include "Lexer/dictionary.h"
+#include "token.h"
+#include "dictionary.h"
+#include "../Error/error.h"
 
 namespace llvmRustCompiler
 {
