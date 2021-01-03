@@ -5,6 +5,8 @@
 * latest date:2021/1/3
 */
 
+//TODO:修复Lexer报错依然运行的问题
+
 #include <algorithm>
 #include <cctype>
 #include "scanner.h"
