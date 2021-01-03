@@ -7,12 +7,6 @@ using namespace std;
 
 int main()
 {
-    BinopPrecedence['<'] = 10;
-    BinopPrecedence['+'] = 20;
-    BinopPrecedence['-'] = 20;
-    BinopPrecedence['*'] = 40;
-
-    MainLoop();
-
+    
     return 0;
 }

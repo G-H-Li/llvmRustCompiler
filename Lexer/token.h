@@ -14,12 +14,6 @@
 #include <map>
 #include <cassert>
 
-///��Ԫ������ڵ�
-/// BinaryExprAST - Expression class for a binary operator.
-class BinaryExprAST : public ExprAST {
-    char Op;
-    std::unique_ptr<ExprAST> LHS, RHS;
-
 namespace llvmRustCompiler
 {
     //单词的类型

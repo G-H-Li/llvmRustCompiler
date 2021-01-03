@@ -11,8 +11,6 @@ aux_source_directory(. DIR_SRCS)
 
 # 添加子目录
 add_subdirectory(Lexer)
-add_subdirectory(Parser)
-add_subdirectory(CodeGenerator)
 
 # 指定生成目标
 add_executable(llvmRustCompiler ${DIR_SRCS} "scanner.h" "scanner.cpp")
