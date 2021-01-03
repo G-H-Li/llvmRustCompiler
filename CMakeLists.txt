@@ -46,6 +46,6 @@ target_link_libraries(llvmRustCompiler ${llvm_libs})
 target_link_libraries(llvmRustCompiler Lexer)
 target_link_libraries(llvmRustCompiler Parser)
 target_link_libraries(llvmRustCompiler Generator)
-
+target_link_libraries(llvmRustCompiler Error)
 
 # TODO: 如有需要，请添加测试并安装目标。
