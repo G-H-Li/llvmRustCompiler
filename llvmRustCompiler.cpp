@@ -2,11 +2,18 @@
 //
 
 #include "llvmRustCompiler.h"
-#include "Lexer/token.h"
+#include "scanner.h"
 using namespace std;
 
 int main()
 {
-    
+    llvmRustCompiler::Scanner scanner("lexerTest.txt");
+    scanner.getNextToken();
+
+    while (scanner.getToken().getTokenType() != llvmRustCompiler::TokenType::tok_eof)
+    {
+        scanner.getToken().dump();
+        scanner.getNextToken();
+    }
     return 0;
 }
