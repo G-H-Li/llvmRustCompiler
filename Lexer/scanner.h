@@ -20,10 +20,11 @@ namespace llvmRustCompiler
     {
     public:
         explicit        Scanner(const std::string& srcFileName);
+        //使用getToken()直接获取缓冲区单词，不会扫描源程序
         Token           getToken() const;
-
-        //尝试读取下一个单词
+        //使用getNextToken()会扫描源程序,尝试读取下一个单词
         Token           getNextToken();
+        //使用getErrorFlag()来获取lexer的报错信息，为true时应停止getNextToken()
         static bool     getErrorFlag();
         static void     setErrorFlag(bool flag);
 
@@ -56,7 +57,7 @@ namespace llvmRustCompiler
         void            handleOperationState();
 
         void            handleDigit();
-        void            handleXDigit();
+        void            handleXDigit();//处理16进制数字
         void            handleFraction();
         void            handleExponent();
         void            errorReport(const std::string& msg);

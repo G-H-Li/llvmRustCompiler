@@ -2,19 +2,21 @@
 //
 
 #include "llvmRustCompiler.h"
-#include "scanner.h"
+#include "Lexer/scanner.h"
 using namespace std;
 
 int main()
 {
-    string fileName = "D:\\CodeFile\\lexerTest.txt";//使用绝对路径
-    llvmRustCompiler::Scanner scanner(fileName);
+    string fileAddress = "D:\\CodeFile\\lexerTest.txt";
+    llvmRustCompiler::Scanner scanner("fileAddress");
     scanner.getNextToken();
 
-    while (scanner.getToken().getTokenType() != llvmRustCompiler::TokenType::tok_eof)
-    {
+    while (!llvmRustCompiler::Scanner::getErrorFlag) {
         scanner.getToken().dump();
         scanner.getNextToken();
+        if (scanner.getToken().getTokenType() == llvmRustCompiler::TokenType::tok_eof)
+            break;
     }
+    
     return 0;
 }

@@ -23,6 +23,7 @@ namespace llvmRustCompiler
         if (input_.fail())
         {
             errorReport("打开文件" + fileName_ + "时出错");
+            errorFlag_ = true;
         }
     }
 
@@ -156,6 +157,13 @@ namespace llvmRustCompiler
 
     Token Scanner::getNextToken()
     {
+        if (errorFlag_) //lexer出现重大错误时应停止扫描
+        {
+            errorReport("lexer已停止运行");
+            makeToken(TokenType::tok_eof, TokenValue::KW_UNRESERVED,
+                loc_, std::string("END_OF_FILE"), -1);
+            return token_;
+        }
         bool matched = false;
 
         do
