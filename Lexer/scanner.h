@@ -24,9 +24,12 @@ namespace llvmRustCompiler
         Token           getToken() const;
         //使用getNextToken()会扫描源程序,尝试读取下一个单词
         Token           getNextToken();
-        //使用getErrorFlag()来获取lexer的报错信息，为true时应停止getNextToken()
+        //使用getErrorFlag()来获取lexer的报错信息，选择性停止getNextToken()
         static bool     getErrorFlag();
         static void     setErrorFlag(bool flag);
+        //当文件不可用时，应停止使用lexer
+        static bool     getFileAvailable();
+        static void     setFileAvailable(bool flag);
 
     private:
         void            getNextChar();
@@ -56,10 +59,14 @@ namespace llvmRustCompiler
         void            handleStringState();
         void            handleOperationState();
 
+        //以下为处理数字
         void            handleDigit();
         void            handleXDigit();//处理16进制数字
         void            handleFraction();
         void            handleExponent();
+
+        //当分析出错后单词剩余部分一并处理
+        void            handleWrongState();
         void            errorReport(const std::string& msg);
 
     public:
@@ -84,8 +91,8 @@ namespace llvmRustCompiler
         Token               token_;         //当前读取的单词，待填充
         Dictionary          dictionary_;    //参考字典
         std::string         buffer_;        //缓冲区
-        static bool         errorFlag_;
-
+        static bool         errorFlag_;     //标识单词识别时是否出错
+        static bool         isFileAvailable_; //标识源文件是否可用
     };
 
     inline Token Scanner::getToken() const
@@ -101,6 +108,11 @@ namespace llvmRustCompiler
     inline TokenLocation Scanner::getTokenLocation() const
     {
         return TokenLocation(fileName_, line_, column_);
+    }
+
+    inline bool Scanner::getFileAvailable()
+    {
+        return isFileAvailable_;
     }
 }
 
