@@ -5,7 +5,22 @@ cmake_minimum_required (VERSION 3.8)
 
 project ("llvmRustCompiler")
 
-# 将源代码添加到此项目的可执行文件。
-add_executable (llvmRustCompiler "llvmRustCompiler.cpp" "llvmRustCompiler.h" "Lexer/token.h" "Lexer/token.cpp")
+# 查找当前目录下的所有源文件
+# 并将名称保存到 DIR_SRCS 变量
+aux_source_directory(. DIR_SRCS)
+
+# 添加子目录
+add_subdirectory(Lexer)
+add_subdirectory(Parser)
+add_subdirectory(CodeGenerator)
+
+# 指定生成目标
+add_executable(llvmRustCompiler ${DIR_SRCS} "scanner.h" "scanner.cpp")
+
+# 添加链接库
+target_link_libraries(llvmRustCompiler Lexer)
+target_link_libraries(llvmRustCompiler Parser)
+target_link_libraries(llvmRustCompiler Generator)
+
 
 # TODO: 如有需要，请添加测试并安装目标。

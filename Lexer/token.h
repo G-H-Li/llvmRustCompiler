@@ -1,122 +1,216 @@
-/*
-* Author: ÕÅÇå·æ
+ï»¿/*
+* Author: zqf
 * Date:2021/1/2
-* description:Ã¶¾ÙtokenºÍ¶¨ÒåAST
-* latest date:2021/1/2
+* description:æšä¸¾ç±»å‹ã€å…³é”®å­—ã€å®šä¹‰tokenç­‰
+* latest date:2021/1/3
 */
 
+#ifndef TOKEN_H_
+#define TOKEN_H_
+
 #include <string>
-#include <cctype>
-#include <cstdio>
-#include <cstdlib>
+#include <iostream>
+#include <tuple>
 #include <map>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
+#include <cassert>
 
-// Ã¶¾Ùµ¥´ÊÀàĞÍ
-enum Token {
-    tok_eof = -1,
-
-    // commands
-    tok_let = -2,//ÉùÃ÷±äÁ¿
-    tok_fn = -3,//ÉùÃ÷º¯Êı
-
-    tok_ptr = -4, //->
-    //ÆäËû¹Ø¼ü×Ö
-
-    // primary
-    tok_identifier = -5, //±êÊ¶·û
-    tok_illIdentifier = -6, //´íÎó±êÊ¶·û
-    tok_number = -7 //Êı×Ö³£Á¿
-};
-
-// ¶¨Òå³éÏóÓï·¨Ê÷½Úµã
-/// ExprAST - Base class for all expression nodes.
-class ExprAST {
-public:
-    virtual ~ExprAST() = default;
-};
-
-///Êı×ÖÖµ½Úµã
-/// NumberExprAST - Expression class for numeric literals like "1.0".
-class NumberExprAST : public ExprAST {
-    double Val;
-
-public:
-    NumberExprAST(double Val) : Val(Val) {}
-};
-
-///±äÁ¿½Úµã
-/// VariableExprAST - Expression class for referencing a variable, like "a".
-class VariableExprAST : public ExprAST {
-    std::string Name;
-
-public:
-    VariableExprAST(const std::string& Name) : Name(Name) {}
-};
-
-///¶şÔªÔËËã·û½Úµã
+///ï¿½ï¿½Ôªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµï¿½
 /// BinaryExprAST - Expression class for a binary operator.
 class BinaryExprAST : public ExprAST {
     char Op;
     std::unique_ptr<ExprAST> LHS, RHS;
 
-public:
-    BinaryExprAST(char Op, std::unique_ptr<ExprAST> LHS,
-        std::unique_ptr<ExprAST> RHS)
-        : Op(Op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
-};
+namespace llvmRustCompiler
+{
+    //å•è¯çš„ç±»å‹
+	enum class TokenType
+	{
+        tok_integer,
+        tok_float,
+        tok_bool,
+        tok_char,
+        tok_string,
 
-///º¯Êıµ÷ÓÃ½Úµã
-/// CallExprAST - Expression class for function calls.
-class CallExprAST : public ExprAST {
-    std::string Callee;//º¯ÊıÃû
-    std::vector<std::unique_ptr<ExprAST>> Args;//²ÎÊı,¿ÉÄÜÎª±í´ïÊ½
+        tok_identifier, //æ ‡è¯†ç¬¦
+        tok_keywords,   //å…³é”®å­—
+        tok_operators,  //æ“ä½œç¬¦
+        tok_delimiter,  //åˆ†éš”ç¬¦
+        tok_eof,        //ç»“å°¾
+        tok_unknown
+	};
 
-public:
-    CallExprAST(const std::string& Callee,
-        std::vector<std::unique_ptr<ExprAST>> Args)
-        : Callee(Callee), Args(std::move(Args)) {}
-};
+    //å…³é”®å­—ã€ç¬¦å·ç­‰
+    enum class TokenValue 
+    {
+        //å…³é”®å­—
+        KW_AS,      // as
+        KW_BREAK,   // break
+        KW_CONST,   // const
+        KW_CONTINUE,// continue
+        KW_CRATE,   // crate
+        KW_ELSE,    // else
+        KW_ENUM,    // enum
+        KW_EXTERN,  // extern
+        KW_FALSE,   // false
+        KW_FN,      // fn
+        KW_FOR,     // for
+        KW_IF,      // if
+        KW_IMPL,    // impl
+        KW_IN,      // in
+        KW_LET,     // let
+        KW_LOOP,    // loop
+        KW_MATCH,   // match
+        KW_MOD,     // mod
+        KW_MOVE,    // move
+        KW_MUT,     // mut
+        KW_PUB,     // pub
+        KW_REF,     // ref
+        KW_RETURN,  // return
+        KW_SELFVALUE,// self
+        KW_SELFTYPE,// Self
+        KW_STATIC,  // static
+        KW_STRUCT,  // struct
+        KW_SUPER,   // super
+        KW_TRAIT,   // trait
+        KW_TRUE,    // true
+        KW_TYPE,    // type
+        KW_UNSAFE,  // unsafe
+        KW_USE,     // use
+        KW_WHERE,   // where
+        KW_WHILE,   // while
+        KW_UNRESERVED,//æœªä½¿ç”¨çš„å…³é”®å­—
 
-///ÀàĞÍÉùÃ÷½Úµã
-class TypePrototype : public ExprAST {
-    std::string Name;//±äÁ¿Ãû
-    std::string Type;//ÀàĞÍ
-public:
-    TypePrototype(std::string Name, std::string Type)
-        :Name(Name), Type(Type) {}
-};
+        //ç¬¦å·
+        LEFT_PAREN,        // (
+        RIGHT_PAREN,       // )
+        LEFT_BRACE,       // {
+        RIGHT_BRACE,      // }
+        PLUS,              // +
+        MINUS,             // -
+        MULTIPLY,          // *
+        DIVIDE,            // /
+        COMMA,             // ,
+        PERIOD,            // .
+        SEMICOLON,         // ;
+        COLON,             // :
+        LESS_OR_EQUAL,     // <=
+        LESS_THAN,         // <
+        GREATER_OR_EQUAL,  // >=
+        GREATER_THAN,      // >
+        EQUAL,             // =
+        POINTER            // ->
+    };
 
-///±äÁ¿ÉùÃ÷½Úµã
-//let identifier:type = vlaue
-class VariablePrototype : public ExprAST {
-    std::unique_ptr<ExprAST> NameExpr;//±äÁ¿ÃûÉùÃ÷Ê±¿É¼ÓÀàĞÍ¿É²»¼Ó
-    std::unique_ptr<ExprAST> Value;//Öµ
-public:
-    VariablePrototype(std::unique_ptr<ExprAST> NameExpr,
-        std::unique_ptr<ExprAST> Value)
-        :NameExpr(std::move(NameExpr)), Value(std::move(Value)) {}
-};
+    //ä½ç½®ä¿¡æ¯,ç”¨äºæ£€ç´¢ã€æ ‡é”™
+    class TokenLocation
+    {
+    public:
+        TokenLocation();
+        TokenLocation(const std::string& fileName, int line, int column);
+        std::string toString() const;
+    private:
+        std::string fileName_;
+        int line_;
+        int column_;
+    };
 
-///º¯ÊıÉùÃ÷½Úµã
-///ÉùÃ÷Ê±±ØĞë¸ø³ö¶¨Òå
-/// FunctionAST - This class represents a function definition itself.
-class FunctionAST : public ExprAST {
-    std::string Name;//º¯ÊıÃû
-    std::vector<std::unique_ptr<ExprAST>> Args;//²ÎÊı,Ê¹ÓÃTypePrototype
-    std::vector<std::unique_ptr<ExprAST>> Body;//º¯ÊıÌå
-    std::string ReturnType;//·µ»ØÖµÀàĞÍ
+    class Token
+    {
+    public:
+        Token();
+        //ç¬¦å·
+        Token(TokenType type, TokenValue value, const TokenLocation& location,
+            std::string name, int symbolPrecedence);
+        //æ ‡è¯†ç¬¦ã€å…³é”®å­—ã€ç±»å‹åã€å­—ç¬¦ä¸²å¸¸é‡ã€å¸ƒå°”ç±»å‹å¸¸é‡ç­‰
+        Token(TokenType type, TokenValue value, const TokenLocation& location,
+            const std::string& strValue, std::string name);
+        //æ•´æ•°å¸¸é‡
+        Token(TokenType type, TokenValue value, const TokenLocation& location,
+            long intValue, std::string name);
+        //æµ®ç‚¹æ•°å¸¸é‡
+        Token(TokenType type, TokenValue value, const TokenLocation& location,
+            float floatValue, std::string name);
 
-public:
-    FunctionAST(std::string Name, std::vector<std::unique_ptr<ExprAST>> Args,
-        std::vector<std::unique_ptr<ExprAST>> Body, std::string ReturnType)
-        :Name(Name), Args(std::move(Args)), Body(std::move(Body)), ReturnType(ReturnType) {}
-};
+        TokenType getTokenType() const;
+        TokenValue getTokenValue() const;
+        const TokenLocation& getTokenLocation() const;
+        std::string getTokenName() const;
 
-//Îª²Ù×÷·û¶¨ÒåÓÅÏÈ¼¶
-static std::map<char, int> BinopPrecedence;
+        //è·å–ä¼˜å…ˆçº§
+        int getSymbolPrecedence() const;
 
-void MainLoop();
+        //è·å–å…·ä½“çš„å€¼
+        long getIntValue() const;
+        float getFloatValue() const;
+        std::string getStringValue() const;
+
+        void dump(std::ostream& out = std::cout) const;
+
+        std::string getIdentifierName() const;
+
+        std::string tokenTypeDescription() const;
+        std::string toString() const;
+
+    private:
+        TokenType       type_;
+        TokenValue      value_;
+        TokenLocation   location_;
+        std::string     name_;
+        int             symbolPrecedence_;
+
+        //å¸¸é‡å€¼
+        long            intValue_;
+        float          floatValue_;
+        std::string     strValue_;
+
+    };
+
+    inline TokenType Token::getTokenType() const
+    {
+        return type_;
+    }
+
+    inline TokenValue Token::getTokenValue() const
+    {
+        return value_;
+    }
+
+    inline std::string Token::getTokenName() const
+    {
+        return name_;
+    }
+
+    inline const TokenLocation& Token::getTokenLocation() const
+    {
+        return location_;
+    }
+
+    inline long Token::getIntValue() const
+    {
+        return intValue_;
+    }
+
+    inline float Token::getFloatValue() const
+    {
+        return floatValue_;
+    }
+
+    inline std::string Token::getStringValue() const
+    {
+        return strValue_;
+    }
+
+    inline int Token::getSymbolPrecedence() const
+    {
+        return symbolPrecedence_;
+    }
+
+    inline std::string Token::getIdentifierName() const
+    {
+        assert(type_ == TokenType::tok_identifier && "Token type should be identifier.");
+        return name_;
+    }
+}
+
+#endif
+
