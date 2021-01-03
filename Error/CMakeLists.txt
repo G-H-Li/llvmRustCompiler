@@ -3,4 +3,4 @@
 aux_source_directory(. DIR_LIB_SRCS)
 
 # Éú³ÉÁ´½Ó¿â
-add_library (Lexer ${DIR_LIB_SRCS})
+add_library (Error ${DIR_LIB_SRCS})
