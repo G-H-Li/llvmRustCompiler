@@ -7,7 +7,8 @@ using namespace std;
 
 int main()
 {
-    llvmRustCompiler::Scanner scanner("lexerTest.txt");
+    string fileName = "D:\\CodeFile\\lexerTest.txt";//使用绝对路径
+    llvmRustCompiler::Scanner scanner(fileName);
     scanner.getNextToken();
 
     while (scanner.getToken().getTokenType() != llvmRustCompiler::TokenType::tok_eof)
