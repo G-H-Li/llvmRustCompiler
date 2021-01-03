@@ -309,12 +309,12 @@ namespace llvmRustCompiler
 
                 if (isFloat)
                 {
-                    errorReport("已经是浮点数了，没必要再来一个 .");
+                    errorReport(buffer_ + "已经是浮点数了，没必要再来一个 .");
                 }
 
                 if (isExponent)
                 {
-                    errorReport("指数部分不能有 .");
+                    errorReport(buffer_ + "指数部分不能有 .");
                 }
 
                 if (numberBase == 16)
@@ -328,7 +328,7 @@ namespace llvmRustCompiler
             {
                 if (isExponent)
                 {
-                    errorReport("已经是指数了，不能有更多e/E");
+                    errorReport(buffer_ + "已经是指数了，不能有更多e/E");
                 }
                 numberState = NumberState::EXPONENT;
             }
