@@ -38,6 +38,10 @@ namespace llvmRustCompiler {
 		return ConstantFP::get(TheContext, APFloat(Val));
 	}
 
+	Value* IntNumberExprAST::codegen() {
+		return ConstantInt::get(TheContext, APInt(Bits, Val, IsSigned));
+	}
+
 	Value* VariableExprAST::codegen() {
 
 	}

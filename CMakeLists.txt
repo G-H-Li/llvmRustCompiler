@@ -37,7 +37,7 @@ llvm_map_components_to_libnames(llvm_libs
 # 添加子目录
 add_subdirectory(Lexer)
 add_subdirectory(Parser)
-add_subdirectory(CodeGenerator)
+add_subdirectory(Generator)
 add_subdirectory(Error)
 
 # 添加链接库
