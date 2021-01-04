@@ -37,5 +37,18 @@ namespace llvmRustCompiler {
 		std::unique_ptr<FunctionAST> ParseTopLevelExpr();
 		std::unique_ptr<ExprAST> ParseIfExpr();
 
+
+	private:
+        void HandleDefinition();
+        void HandleTopLevelExpression();
+        /// top ::= definition | external | expression | ';'
+        void MainLoop();
+
+    
+    public:
+        //===----------------------------------------------------------------------===//
+        // Main driver code.
+        //===----------------------------------------------------------------------===//
+		int main();
 	};
 }

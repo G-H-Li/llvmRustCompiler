@@ -397,5 +397,73 @@ namespace llvmRustCompiler {
 				std::move(Else));
 		};
 
+
+
+		private:
+			void HandleDefinition() {
+				if (ParseDefinition()) {
+					fprintf(stderr, "Parsed a function definition.\n");
+				}
+				else {
+					// Skip token for error recovery.
+					scanner.getNextToken();
+				}
+			}
+
+
+			void HandleTopLevelExpression() {
+				// Evaluate a top-level expression into an anonymous function.
+				if (ParseTopLevelExpr()) {
+					fprintf(stderr, "Parsed a top-level expr\n");
+				}
+				else {
+					// Skip token for error recovery.
+					scanner.getNextToken();
+				}
+			}
+
+			/// top ::= definition | external | expression | ';'
+			void MainLoop() {
+				while (true) {
+					fprintf(stderr, "ready> ");
+					switch (scanner.getToken().getTokenType()) {
+
+					case TokenType::tok_eof:
+						return;
+					case TokenType::tok_keywords: {
+						if (scanner.getToken().getTokenValue() == TokenValue::SEMICOLON) {
+							scanner.getNextToken();
+							break;
+						}
+						else if (scanner.getToken().getTokenValue() == TokenValue::KW_FN) {
+							HandleDefinition();
+							break;
+						}
+						else if (scanner.getToken().getTokenValue() == TokenValue::KW_IF) {
+							ParseIfExpr();
+							break;
+						}
+
+					}
+					default:
+						HandleTopLevelExpression();
+						break;
+					}
+				}
+			}
+
+		public:
+			int main() {
+
+				// Prime the first token.
+				fprintf(stderr, "ready> ");
+				scanner.getNextToken();
+
+				// Run the main "interpreter loop" now.
+				MainLoop();
+
+				return 0;
+			}
+
 	};
 }
