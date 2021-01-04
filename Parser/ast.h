@@ -1,96 +1,231 @@
 #pragma once
+/*
+* Author: ÊùéÂõΩË±™
+* Date:2021/1/3
+* description:ÊäΩË±°ËØ≠Ê≥ïÊ†ëÂÆö‰πâ
+* latest date:2021/1/4
+*/
 
+
+#include "../Lexer/token.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Value.h"
+#include "llvm/Support/raw_ostream.h"
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
-#include <map>
-#include <memory>
 #include <string>
-#include <utility>
-#include <vector>
+#include <map>
+
+using namespace llvm;
 
 namespace llvmRustCompiler
 {
-    /// ª˘¿‡
+    raw_ostream& indent(raw_ostream& O, int size) {
+        return O << std::string(size, ' ');
+    }
+
+    // Âü∫Á±ª
+
     class ExprAST {
+        TokenLocation Loc;
     public:
+        ExprAST() {}
+        ExprAST(TokenLocation Loc) : Loc(Loc) {}
         virtual ~ExprAST() = default;
+        // ‰∏≠Èó¥‰ª£Á†ÅÁîüÊàêÂáΩÊï∞
+        virtual Value* codegen() = 0;
+        virtual raw_ostream& dump(raw_ostream& out, int ind) {
+            return out << ':' << Loc.getLine() << ':' << Loc.getCol() << '\n';
+        }
     };
 
-    ///  ˝◊÷
+    /// Êï∞Â≠ó
     class NumberExprAST : public ExprAST {
         double Val;
 
     public:
-        NumberExprAST(double Val){}
+        NumberExprAST(TokenLocation Loc, double Val): ExprAST(Loc), Val(Val) {}
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            return ExprAST::dump(out << Val, ind);
+        }
+        Value* codegen() override;
     };
 
-    /// ±‰¡ø°£rust±‰¡ø“™…˘√˜¿‡–Õ£¨“Ú¥ÀÃÌº”“ª∏ˆtype Ù–‘
-    /// “ÚŒ™”–let mut¥Ê‘⁄£¨æÕÃÌº”“ª∏ˆisConst Ù–‘
+    /// ÂèòÈáè isMutable Ë°®Á§∫ÊòØÂê¶ÂèØÂèòÂèòÈáè
     class VariableExprAST : public ExprAST {
         std::string Name;
         int Type;
-        bool IsConst;
+        bool IsMutable;
     public:
-        VariableExprAST(const std::string& Name, int Type, bool IsConst){}
+        VariableExprAST(TokenLocation Loc, const std::string& Name, int Type, bool IsMutable)
+            : ExprAST(Loc), Name(Name), Type(Type), IsMutable(IsMutable) {}
+        const std::string& getName() const { return Name; }
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            return ExprAST::dump(out << Name, ind);
+        }
+        Value* codegen() override;
     };
 
-    /// BinaryExprAST - Expression class for a binary operator.
+    /// ‰∏ÄÂÖÉÊìç‰ΩúÁ¨¶
+    class UnaryExprAST : public ExprAST {
+        char Opcode;
+        std::unique_ptr<ExprAST> Operand;
+
+    public:
+        UnaryExprAST(TokenLocation Loc, char Opcode, std::unique_ptr<ExprAST> Operand)
+            : ExprAST(Loc), Opcode(Opcode), Operand(std::move(Operand)) {}
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "unary" << Opcode, ind);
+            Operand->dump(out, ind + 1);
+            return out;
+        }
+        Value* codegen() override;
+    };
+
+    /// ‰∫åÂÖÉÊìç‰ΩúÁ¨¶
     class BinaryExprAST : public ExprAST {
         char Op;
         std::unique_ptr<ExprAST> LHS, RHS;
 
     public:
-        BinaryExprAST(char Op, std::unique_ptr<ExprAST> LHS,
-            std::unique_ptr<ExprAST> RHS){}
+        BinaryExprAST(TokenLocation Loc, char Op, std::unique_ptr<ExprAST> LHS,
+            std::unique_ptr<ExprAST> RHS)
+            : ExprAST(Loc), Op(Op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "binary" << Op, ind);
+            LHS->dump(indent(out, ind) << "LHS:", ind + 1);
+            RHS->dump(indent(out, ind) << "RHS:", ind + 1);
+            return out;
+        }
+        Value* codegen() override;
     };
 
-    /// CallExprAST - Expression class for function calls.
+    /// ÂáΩÊï∞Ë∞ÉÁî®
     class CallExprAST : public ExprAST {
         std::string Callee;
         std::vector<std::unique_ptr<ExprAST>> Args;
 
     public:
-        CallExprAST(const std::string& Callee,
-            std::vector<std::unique_ptr<ExprAST>> Args){}
+        CallExprAST(TokenLocation Loc, const std::string& Callee,
+            std::vector<std::unique_ptr<ExprAST>> Args)
+            : ExprAST(Loc), Callee(Callee), Args(std::move(Args)) {}
+        
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "call " << Callee, ind);
+            for (const auto& Arg : Args)
+                Arg->dump(indent(out, ind + 1), ind + 1);
+            return out;
+        }
+        Value* codegen() override;
     };
 
+    /// Âà§Êñ≠Ë°®ËææÂºèÔºàifÔºåelse if Ôºå elseÔºâ
+    class IfExprAST : public ExprAST {
+        std::unique_ptr<ExprAST> Cond, ElseIf, Else;
 
-    /// ∫Ø ˝‘≠–Õ¥¯”–∑µªÿ¿‡–Õ£¨“Ú¥À“™º”“ª∏ˆtype
+    public:
+        IfExprAST(TokenLocation Loc, std::unique_ptr<ExprAST> Cond,
+            std::unique_ptr<ExprAST> ElseIf, std::unique_ptr<ExprAST> Else)
+            : ExprAST(Loc), Cond(std::move(Cond)), ElseIf(std::move(ElseIf)),
+            Else(std::move(Else)) {}
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "if", ind);
+            Cond->dump(indent(out, ind) << "Cond:", ind + 1);
+            ElseIf->dump(indent(out, ind) << "ElseIf:", ind + 1);
+            Else->dump(indent(out, ind) << "Else:", ind + 1);
+            return out;
+        }
+
+        Value *codegen() override;
+    };
+
+    /// ForÂæ™ÁéØ - Expression class for for/in.
+    class ForExprAST : public ExprAST {
+        std::string VarName;
+        std::unique_ptr<ExprAST> Start, End, Step, Body;
+
+    public:
+        ForExprAST(TokenLocation Loc, const std::string& VarName, std::unique_ptr<ExprAST> Start,
+            std::unique_ptr<ExprAST> End, std::unique_ptr<ExprAST> Step,
+            std::unique_ptr<ExprAST> Body)
+            : ExprAST(Loc), VarName(VarName), Start(std::move(Start)), End(std::move(End)),
+            Step(std::move(Step)), Body(std::move(Body)) {}
+        
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "for", ind);
+            Start->dump(indent(out, ind) << "Cond:", ind + 1);
+            End->dump(indent(out, ind) << "End:", ind + 1);
+            Step->dump(indent(out, ind) << "Step:", ind + 1);
+            Body->dump(indent(out, ind) << "Body:", ind + 1);
+            return out;
+        }
+        Value* codegen() override;
+    };
+
+    // TODO whileÂæ™ÁéØ
+    class WhileExprAST : public ExprAST {
+    };
+    // TODO loopÂæ™ÁéØ
+    class LoopExprAST : public ExprAST {
+
+    };
+
+    // Â±ÄÈÉ®ÂèòÈáè
+    class VarExprAST : public ExprAST {
+        std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>> VarNames;
+        std::unique_ptr<ExprAST> Body;
+
+    public:
+        VarExprAST(TokenLocation Loc, std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>> VarNames,
+            std::unique_ptr<ExprAST> Body)
+            : ExprAST(Loc), VarNames(std::move(VarNames)), Body(std::move(Body)) {}
+        
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "var", ind);
+            for (const auto& NamedVar : VarNames)
+                NamedVar.second->dump(indent(out, ind) << NamedVar.first << ':', ind + 1);
+            Body->dump(indent(out, ind) << "Body:", ind + 1);
+            return out;
+        }
+        Value* codegen() override;
+    };
+
+    /// ÂáΩÊï∞ÂÆö‰πâÂéüÂûãÂ∏¶ÊúâËøîÂõûÁ±ªÂûãÂíåÂèÇÊï∞ÂêçÂèäÁ±ªÂûã
     class PrototypeAST {
         std::string Name;
-        std::vector<std::string> Args;
+        std::map<int, std::string> Args;
         int Type;
+        int Line;
     public:
-        PrototypeAST(const std::string& Name,
-            std::vector<std::string> Args,
-            int Type){}
 
-        /*PrototypeAST(const std::string& Name,
-            std::vector<std::string> Args)
-            : Name(Name), Args(std::move(Args)) {}*/
+        PrototypeAST(TokenLocation Loc, const std::string& Name,
+            std::map<int, std::string> Args, int Type)
+            : Name(Name), Args(std::move(Args)), Type(Type), Line(Loc.getLine()){}
 
         const std::string& getName() const { return Name; }
+        int getLine() const { return Line; }
+
+        Function* codegen();
     };
 
-    /// FunctionAST - This class represents a function definition itself.
+    /// ÂáΩÊï∞AST
     class FunctionAST {
         std::unique_ptr<PrototypeAST> Proto;
         std::unique_ptr<ExprAST> Body;
 
     public:
         FunctionAST(std::unique_ptr<PrototypeAST> Proto,
-            std::unique_ptr<ExprAST> Body) {}
-    };
-
-
-    //if”Ôæ‰µƒAST∂®“Â
-    class IfExprAST : public ExprAST {
-        std::unique_ptr<ExprAST> Cond, Then, Else;
-    public:
-        IfExprAST(std::unique_ptr<ExprAST> Cond, std::unique_ptr<ExprAST> Then,
-            std::unique_ptr<ExprAST> Else) {}
-
-        //Value* codegen() override; //Œﬁcodegen()œ»◊¢ ÕµÙ
+            std::unique_ptr<ExprAST> Body)
+            : Proto(std::move(Proto)), Body(std::move(Body)) {}
+        
+        raw_ostream& dump(raw_ostream& out, int ind) {
+            indent(out, ind) << "FunctionAST\n";
+            ++ind;
+            indent(out, ind) << "Body:";
+            return Body ? Body->dump(out, ind) : out << "null\n";
+        }
+        Function* codegen();
     };
 }

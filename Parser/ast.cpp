@@ -1,101 +1,51 @@
+/*
+* Author: ÊùéÂõΩË±™
+* Date:2021/1/3
+* description:ÊäΩË±°ËØ≠Ê≥ïÊ†ëÂÆö‰πâ
+* latest date:2021/1/4
+*/
+
 #include "ast.h"
 
-#include <cctype>
-#include <cstdio>
-#include <cstdlib>
-#include <map>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
+namespace llvmRustCompiler {
 
-namespace llvmRustCompiler
-{
-    /// ª˘¿‡
-    class ExprAST {
-    public:
-        virtual ~ExprAST() = default;
-    };
+	Value* NumberExprAST::codegen() {
 
-    ///  ˝◊÷
-    class NumberExprAST : public ExprAST {
-        double Val;
+	}
 
-    public:
-        NumberExprAST(double Val) : Val(Val) {}
-    };
+	Value* VariableExprAST::codegen() {
 
-    /// ±‰¡ø°£rust±‰¡ø“™…˘√˜¿‡–Õ£¨“Ú¥ÀÃÌº”“ª∏ˆtype Ù–‘
-    /// “ÚŒ™”–let mut¥Ê‘⁄£¨æÕÃÌº”“ª∏ˆisConst Ù–‘
-    class VariableExprAST : public ExprAST {
-        std::string Name;
-        int Type;
-        bool IsConst;
-    public:
-        VariableExprAST(const std::string& Name, int Type, bool IsConst) : Name(Name), Type(Type), IsConst(IsConst) {}
-    };
+	}
 
-    /// BinaryExprAST - Expression class for a binary operator.
-    class BinaryExprAST : public ExprAST {
-        char Op;
-        std::unique_ptr<ExprAST> LHS, RHS;
+	Value* UnaryExprAST::codegen() {
 
-    public:
-        BinaryExprAST(char Op, std::unique_ptr<ExprAST> LHS,
-            std::unique_ptr<ExprAST> RHS)
-            : Op(Op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
-    };
+	}
 
-    /// CallExprAST - Expression class for function calls.
-    class CallExprAST : public ExprAST {
-        std::string Callee;
-        std::vector<std::unique_ptr<ExprAST>> Args;
+	Value* BinaryExprAST::codegen() {
 
-    public:
-        CallExprAST(const std::string& Callee,
-            std::vector<std::unique_ptr<ExprAST>> Args)
-            : Callee(Callee), Args(std::move(Args)) {}
-    };
+	}
 
+	Value* CallExprAST::codegen() {
 
-    /// ∫Ø ˝‘≠–Õ¥¯”–∑µªÿ¿‡–Õ£¨“Ú¥À“™º”“ª∏ˆtype
-    class PrototypeAST {
-        std::string Name;
-        std::vector<std::string> Args;
-        int Type;
-    public:
-        PrototypeAST(const std::string& Name,
-            std::vector<std::string> Args,
-            int Type)
-            : Name(Name), Args(std::move(Args)), Type(Type) {}
+	}
 
-        /*PrototypeAST(const std::string& Name,
-            std::vector<std::string> Args)
-            : Name(Name), Args(std::move(Args)) {}*/
+	Value* IfExprAST::codegen() {
 
-        const std::string& getName() const { return Name; }
-    };
+	}
 
-    /// FunctionAST - This class represents a function definition itself.
-    class FunctionAST {
-        std::unique_ptr<PrototypeAST> Proto;
-        std::unique_ptr<ExprAST> Body;
+	Value* ForExprAST::codegen() {
 
-    public:
-        FunctionAST(std::unique_ptr<PrototypeAST> Proto,
-            std::unique_ptr<ExprAST> Body)
-            : Proto(std::move(Proto)), Body(std::move(Body)) {}
-    };
+	}
 
+	Value* VarExprAST::codegen() {
 
-    //if”Ôæ‰µƒAST∂®“Â
-    class IfExprAST : public ExprAST {
-        std::unique_ptr<ExprAST> Cond, Then, Else;
-    public:
-        IfExprAST(std::unique_ptr<ExprAST> Cond, std::unique_ptr<ExprAST> Then,
-            std::unique_ptr<ExprAST> Else)
-            : Cond(std::move(Cond)), Then(std::move(Then)), Else(std::move(Else)) {}
+	}
 
-        //Value* codegen() override; //Œﬁcodegen()œ»◊¢ ÕµÙ
-    };
+	Function* PrototypeAST::codegen() {
+
+	}
+
+	Function* FunctionAST::codegen() {
+
+	}
 }

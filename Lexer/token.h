@@ -102,6 +102,8 @@ namespace llvmRustCompiler
     public:
         TokenLocation();
         TokenLocation(const std::string& fileName, int line, int column);
+        int getLine() const { return this->line_; }
+        int getCol() const { return this->column_; }
         std::string toString() const;
     private:
         std::string fileName_;

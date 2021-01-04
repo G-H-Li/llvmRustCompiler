@@ -1,6 +1,7 @@
-# ╡Иур╣╠г╟д©б╪об╣дкЫспт╢нд╪Ч
-# ╡╒╫╚цШЁф╠ё╢Ф╣╫ DIR_LIB_SRCS ╠Да©
+# Ф÷╔Ф┴╬Е╫⌠Е┴█Г⌡╝Е╫∙Д╦▀Г └Ф┴─Ф°┴Ф╨░Ф√┤Д╩╤
+# Е╧╤Е╟├Е░█Г╖╟Д©²Е╜≤Е┬╟ DIR_LIB_SRCS Е▐≤И┤▐
 aux_source_directory(. DIR_LIB_SRCS)
 
-# иЗЁиа╢╫с©Б
-add_library (Parser ${DIR_LIB_SRCS}  )
+# Г■÷Ф┬░И⌠╬Ф▌╔Е╨⌠
+add_library (Parser ${DIR_LIB_SRCS})
+target_link_libraries(Parser ${llvm_libs})
