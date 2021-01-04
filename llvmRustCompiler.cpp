@@ -2,7 +2,6 @@
 //
 
 #include "llvmRustCompiler.h"
-#include "Lexer/scanner.h"
 using namespace std;
 
 // 词法分析器测试
