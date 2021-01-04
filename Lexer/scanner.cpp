@@ -2,7 +2,7 @@
 * Author: zqf
 * Date:2021/1/2
 * description:Scanner函数成员的实现
-* latest date:2021/1/3
+* latest date:2021/1/5
 */
 
 #include <algorithm>
@@ -369,19 +369,8 @@ namespace llvmRustCompiler
             }
             else
             {
-                switch (numberBase)
-                {
-                case 10:
-                    makeToken(TokenType::tok_integer, TokenValue::KW_UNRESERVED, loc_,
-                        std::stol(buffer_, 0, numberBase), buffer_);
-                    break;
-                case 16:
-                    makeToken(TokenType::tok_integer, TokenValue::KW_UNRESERVED, loc_,
-                        buffer_, buffer_);
-                    break;
-                default:
-                    break;
-                }
+                makeToken(TokenType::tok_integer, TokenValue::KW_UNRESERVED, loc_,
+                    std::stol(buffer_, 0, 0), buffer_);//进制参数用0时将自动根据基数转化
             }
         }
 

@@ -2,7 +2,7 @@
 * Author: zqf
 * Date:2021/1/2
 * description:枚举类型、关键字、定义token等
-* latest date:2021/1/3
+* latest date:2021/1/5
 */
 
 #ifndef TOKEN_H_
@@ -34,7 +34,7 @@ namespace llvmRustCompiler
         tok_unknown
     };
 
-    //关键字、符号等
+    //关键字、类型、符号等
     enum class TokenValue
     {
         //关键字
@@ -73,27 +73,57 @@ namespace llvmRustCompiler
         KW_USE,     // use
         KW_WHERE,   // where
         KW_WHILE,   // while
-        KW_UNRESERVED,//未使用的关键字
+        POINTER,    // ->
+        KW_UNRESERVED,//未知的关键字
+
+        //声明类型
+        KW_I8,      //i8
+        KW_I16,     //i16
+        KW_I32,     //i32
+        KW_I64,     //i64
+        KW_ISIZE,   //isize
+        KW_U8,      //u8
+        KW_U16,     //u16
+        KW_U32,     //u32
+        KW_U64,     //u64
+        KW_USIZE,   //usize
+        KW_F32,     //f32
+        KW_F64,     //f64
 
         //符号
         LEFT_PAREN,        // (
         RIGHT_PAREN,       // )
         LEFT_BRACE,       // {
         RIGHT_BRACE,      // }
-        PLUS,              // +
-        MINUS,             // -
-        MULTIPLY,          // *
-        DIVIDE,            // /
+
         COMMA,             // ,
         PERIOD,            // .
         SEMICOLON,         // ;
         COLON,             // :
+
+        PLUS,              // +
+        MINUS,             // -
+        MULTIPLY,          // *
+        DIVIDE,            // /
+        REMAINDER,         // %
+
+        AND,               // &
+        OR,                // |
+        XOR,               // ^
+        SHR,               // >>
+        SHL,               // <<
+
+        LOGIC_AND,         // &&
+        LOGIC_OR,          // ||
+        LOGIC_NOT,         // !
+
         LESS_OR_EQUAL,     // <=
         LESS_THAN,         // <
         GREATER_OR_EQUAL,  // >=
         GREATER_THAN,      // >
         EQUAL,             // =
-        POINTER            // ->
+        PLUS_EQUAL,        // +=
+        MINUS_EQUAL        // -=
     };
 
     //位置信息,用于检索、标错
@@ -131,11 +161,12 @@ namespace llvmRustCompiler
         TokenType getTokenType() const;
         TokenValue getTokenValue() const;
         const TokenLocation& getTokenLocation() const;
+
+        //获取源单词，如单词0xaa将返回0xaa，而用getIntValue()将返回170
         std::string getTokenName() const;
 
         //获取优先级
         int getSymbolPrecedence() const;
-
         //获取具体的值
         long getIntValue() const;
         float getFloatValue() const;
