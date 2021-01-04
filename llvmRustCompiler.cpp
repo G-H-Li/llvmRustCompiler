@@ -5,7 +5,8 @@
 #include "Lexer/scanner.h"
 using namespace std;
 
-int main()
+// 词法分析器测试
+void lexerTest()
 {
     string fileAddress = "D:\\CodeFile\\lexerTest.txt";
     llvmRustCompiler::Scanner scanner(fileAddress);
@@ -24,9 +25,20 @@ int main()
             scanner.getNextToken();
         }
     }
-    else 
+    else
     {
         //添加当文件不可用时的处理
     }
+}
+
+//语法分析器测试
+void parserTest()
+{
+    
+}
+
+int main()
+{
+    
     return 0;
 }
