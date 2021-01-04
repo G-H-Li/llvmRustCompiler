@@ -6,12 +6,11 @@ using namespace std;
 
 int main()
 {
-    string fileName = ".\lexerTest.rs";//使用绝对路径
-    llvmRustCompiler::Scanner scanner(fileName);
-    scanner.getNextToken();
-
-    while (scanner.getToken().getTokenType() != llvmRustCompiler::TokenType::tok_eof)
-    {
+    string fileAddress = "D:\\CodeFile\\lexerTest.txt";
+    llvmRustCompiler::Scanner scanner(fileAddress);
+    scanner.getNextToken();//开始扫描
+    //注意使用Scanner::getErrorFlag()、scanner.getToken().getTokenType()来指示lexer的运行
+    while (!llvmRustCompiler::Scanner::getErrorFlag()) {
         scanner.getToken().dump();
         scanner.getNextToken();
     }

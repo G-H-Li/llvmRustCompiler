@@ -5,5 +5,7 @@
 
 #include <iostream>
 #include "./Lexer/scanner.h"
+#include "CodeGenerator/generator.h"
+#include "Parser/ast.h"
 
 // TODO: 在此处引用程序需要的其他标头。

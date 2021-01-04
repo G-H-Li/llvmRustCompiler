@@ -1,15 +1,42 @@
 #pragma once
+/*
+* Author: 李国豪
+* Date:2021/1/3
+* description:抽象语法树定义
+* latest date:2021/1/4
+*/
 
+
+#include "../Lexer/token.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Value.h"
+#include "llvm/Support/raw_ostream.h"
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
-#include <memory>
+#include <string>
+
+using namespace llvm;
 
 namespace llvmRustCompiler
 {
+    raw_ostream& indent(raw_ostream& O, int size) {
+        return O << std::string(size, ' ');
+    }
+
+    // 基类
     class ExprAST {
+        TokenLocation Loc;
     public:
+        ExprAST() {}
+        ExprAST(TokenLocation Loc) : Loc(Loc) {}
         virtual ~ExprAST() = default;
+        // 中间代码生成函数
+        virtual Value* codegen() = 0;
+        virtual raw_ostream& dump(raw_ostream& out, int ind) {
+            return out << ':' << Loc.getLine() << ':' << Loc.getCol() << '\n';
+        }
     };
 
     /// 数字
@@ -17,41 +44,82 @@ namespace llvmRustCompiler
         double Val;
 
     public:
-        NumberExprAST(double Val) : Val(Val) {}
+        NumberExprAST(TokenLocation Loc, double Val): ExprAST(Loc), Val(Val) {}
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            return ExprAST::dump(out << Val, ind);
+        }
+        Value* codegen() override;
     };
 
-    /// 变量。rust变量要声明类型，因此添加一个type属性
-    /// 因为有let mut存在，就添加一个isConst属性
+    /// 变量 ,let mut存在，就添加一个isMutable属性,表示是否可变
     class VariableExprAST : public ExprAST {
         std::string Name;
         int Type;
-        bool IsConst;
+        bool IsMutable;
     public:
-        VariableExprAST(const std::string& Name, int Type, bool IsConst) : Name(Name), Type(Type), IsConst(IsConst) {}
+        VariableExprAST(TokenLocation Loc, const std::string& Name, int Type, bool IsMutable)
+            : ExprAST(Loc), Name(Name), Type(Type), IsMutable(IsMutable) {}
+        const std::string& getName() const { return Name; }
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            return ExprAST::dump(out << Name, ind);
+        }
+        Value* codegen() override;
     };
 
-    /// BinaryExprAST - Expression class for a binary operator.
+    /// 一元操作符
+    class UnaryExprAST : public ExprAST {
+        char Opcode;
+        std::unique_ptr<ExprAST> Operand;
+
+    public:
+        UnaryExprAST(TokenLocation Loc, char Opcode, std::unique_ptr<ExprAST> Operand)
+            : ExprAST(Loc), Opcode(Opcode), Operand(std::move(Operand)) {}
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "unary" << Opcode, ind);
+            Operand->dump(out, ind + 1);
+            return out;
+        }
+        Value* codegen() override;
+    };
+
+    /// 二元操作符
     class BinaryExprAST : public ExprAST {
         char Op;
         std::unique_ptr<ExprAST> LHS, RHS;
 
     public:
-        BinaryExprAST(char Op, std::unique_ptr<ExprAST> LHS,
+        BinaryExprAST(TokenLocation Loc, char Op, std::unique_ptr<ExprAST> LHS,
             std::unique_ptr<ExprAST> RHS)
-            : Op(Op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
+            : ExprAST(Loc), Op(Op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "binary" << Op, ind);
+            LHS->dump(indent(out, ind) << "LHS:", ind + 1);
+            RHS->dump(indent(out, ind) << "RHS:", ind + 1);
+            return out;
+        }
+        Value* codegen() override;
     };
 
-    /// CallExprAST - Expression class for function calls.
+    /// 函数调用
     class CallExprAST : public ExprAST {
         std::string Callee;
         std::vector<std::unique_ptr<ExprAST>> Args;
 
     public:
-        CallExprAST(const std::string& Callee,
+        CallExprAST(TokenLocation Loc, const std::string& Callee,
             std::vector<std::unique_ptr<ExprAST>> Args)
-            : Callee(Callee), Args(std::move(Args)) {}
+            : ExprAST(Loc), Callee(Callee), Args(std::move(Args)) {}
+        
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "call " << Callee, ind);
+            for (const auto& Arg : Args)
+                Arg->dump(indent(out, ind + 1), ind + 1);
+            return out;
+        }
+        Value* codegen() override;
     };
 
+    //TODO
 
     /// 函数原型带有返回类型，因此要加一个type
     class PrototypeAST {
