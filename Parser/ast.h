@@ -47,9 +47,24 @@ namespace llvmRustCompiler
         double Val;
 
     public:
-        NumberExprAST(TokenLocation Loc, double Val): ExprAST(Loc), Val(Val){}
+        FPNumberExprAST(TokenLocation Loc, double Val): ExprAST(Loc), Val(Val){}
         raw_ostream& dump(raw_ostream& out, int ind) override {
             return ExprAST::dump(out << Val, ind);
+        }
+        Value* codegen() override;
+    };
+
+    // 整型数值
+    class IntNumberExprAST : public ExprAST {
+        long long Val;
+        int Bits;
+        bool IsSigned;
+
+    public:
+        IntNumberExprAST(TokenLocation Loc, long long Val, int Bits, bool IsSigned) 
+            : ExprAST(Loc), Val(Val), Bits(Bits), IsSigned(IsSigned) {}
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            return ExprAST::dump(out << Val<< Bits<< IsSigned, ind);
         }
         Value* codegen() override;
     };
