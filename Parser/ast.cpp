@@ -1,3 +1,4 @@
+#include "ast.h"
 /*
 * Author: Àî¹úºÀ
 * Date:2021/1/3
@@ -26,6 +27,26 @@ namespace llvmRustCompiler {
 	}
 
 	Value* CallExprAST::codegen() {
+
+	}
+
+	Value* IfExprAST::codegen() {
+
+	}
+
+	Value* ForExprAST::codegen() {
+
+	}
+
+	Value* VarExprAST::codegen() {
+
+	}
+
+	Function* PrototypeAST::codegen() {
+
+	}
+
+	Function* FunctionAST::codegen() {
 
 	}
 }

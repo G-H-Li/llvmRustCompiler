@@ -16,6 +16,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <map>
 
 using namespace llvm;
 
@@ -51,7 +52,7 @@ namespace llvmRustCompiler
         Value* codegen() override;
     };
 
-    /// 变量 ,let mut存在，就添加一个isMutable属性,表示是否可变
+    /// 变量 isMutable 表示是否可变变量
     class VariableExprAST : public ExprAST {
         std::string Name;
         int Type;
@@ -119,27 +120,95 @@ namespace llvmRustCompiler
         Value* codegen() override;
     };
 
-    //TODO
+    /// 判断表达式（if，else if ， else）
+    class IfExprAST : public ExprAST {
+        std::unique_ptr<ExprAST> Cond, ElseIf, Else;
 
-    /// 函数原型带有返回类型，因此要加一个type
-    class PrototypeAST {
-        std::string Name;
-        std::vector<std::string> Args;
-        int Type;
     public:
-        PrototypeAST(const std::string& Name,
-            std::vector<std::string> Args,
-            int Type)
-            : Name(Name), Args(std::move(Args)), Type(Type) {}
+        IfExprAST(TokenLocation Loc, std::unique_ptr<ExprAST> Cond,
+            std::unique_ptr<ExprAST> ElseIf, std::unique_ptr<ExprAST> Else)
+            : ExprAST(Loc), Cond(std::move(Cond)), ElseIf(std::move(ElseIf)),
+            Else(std::move(Else)) {}
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "if", ind);
+            Cond->dump(indent(out, ind) << "Cond:", ind + 1);
+            ElseIf->dump(indent(out, ind) << "ElseIf:", ind + 1);
+            Else->dump(indent(out, ind) << "Else:", ind + 1);
+            return out;
+        }
 
-        /*PrototypeAST(const std::string& Name,
-            std::vector<std::string> Args)
-            : Name(Name), Args(std::move(Args)) {}*/
-
-        const std::string& getName() const { return Name; }
+        Value *codegen() override;
     };
 
-    /// FunctionAST - This class represents a function definition itself.
+    /// For循环 - Expression class for for/in.
+    class ForExprAST : public ExprAST {
+        std::string VarName;
+        std::unique_ptr<ExprAST> Start, End, Step, Body;
+
+    public:
+        ForExprAST(TokenLocation Loc, const std::string& VarName, std::unique_ptr<ExprAST> Start,
+            std::unique_ptr<ExprAST> End, std::unique_ptr<ExprAST> Step,
+            std::unique_ptr<ExprAST> Body)
+            : ExprAST(Loc), VarName(VarName), Start(std::move(Start)), End(std::move(End)),
+            Step(std::move(Step)), Body(std::move(Body)) {}
+        
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "for", ind);
+            Start->dump(indent(out, ind) << "Cond:", ind + 1);
+            End->dump(indent(out, ind) << "End:", ind + 1);
+            Step->dump(indent(out, ind) << "Step:", ind + 1);
+            Body->dump(indent(out, ind) << "Body:", ind + 1);
+            return out;
+        }
+        Value* codegen() override;
+    };
+
+    // TODO while循环
+    class WhileExprAST : public ExprAST {
+    };
+    // TODO loop循环
+    class LoopExprAST : public ExprAST {
+
+    };
+
+    // 局部变量
+    class VarExprAST : public ExprAST {
+        std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>> VarNames;
+        std::unique_ptr<ExprAST> Body;
+
+    public:
+        VarExprAST(TokenLocation Loc, std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>> VarNames,
+            std::unique_ptr<ExprAST> Body)
+            : ExprAST(Loc), VarNames(std::move(VarNames)), Body(std::move(Body)) {}
+        
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "var", ind);
+            for (const auto& NamedVar : VarNames)
+                NamedVar.second->dump(indent(out, ind) << NamedVar.first << ':', ind + 1);
+            Body->dump(indent(out, ind) << "Body:", ind + 1);
+            return out;
+        }
+        Value* codegen() override;
+    };
+
+    /// 函数定义原型带有返回类型和参数名及类型
+    class PrototypeAST {
+        std::string Name;
+        std::map<int, std::string> Args;
+        int Type;
+        int Line;
+    public:
+        PrototypeAST(TokenLocation Loc, const std::string& Name,
+            std::map<int, std::string> Args, int Type)
+            : Name(Name), Args(std::move(Args)), Type(Type), Line(Loc.getLine()){}
+
+        const std::string& getName() const { return Name; }
+        int getLine() const { return Line; }
+
+        Function* codegen();
+    };
+
+    /// 函数AST
     class FunctionAST {
         std::unique_ptr<PrototypeAST> Proto;
         std::unique_ptr<ExprAST> Body;
@@ -148,17 +217,13 @@ namespace llvmRustCompiler
         FunctionAST(std::unique_ptr<PrototypeAST> Proto,
             std::unique_ptr<ExprAST> Body)
             : Proto(std::move(Proto)), Body(std::move(Body)) {}
-    };
-
-
-    //if语句的AST定义
-    class IfExprAST : public ExprAST {
-        std::unique_ptr<ExprAST> Cond, Then, Else;
-    public:
-        IfExprAST(std::unique_ptr<ExprAST> Cond, std::unique_ptr<ExprAST> Then,
-            std::unique_ptr<ExprAST> Else)
-            : Cond(std::move(Cond)), Then(std::move(Then)), Else(std::move(Else)) {}
-
-        //Value* codegen() override; //无codegen()先注释掉
+        
+        raw_ostream& dump(raw_ostream& out, int ind) {
+            indent(out, ind) << "FunctionAST\n";
+            ++ind;
+            indent(out, ind) << "Body:";
+            return Body ? Body->dump(out, ind) : out << "null\n";
+        }
+        Function* codegen();
     };
 }
