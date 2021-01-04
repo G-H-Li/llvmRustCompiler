@@ -8,11 +8,9 @@
 
 
 #include "../Lexer/token.h"
-#include "llvm/IR/Type.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Value.h"
 #include "llvm/Support/raw_ostream.h"
-#include "../llvmRustCompiler.h"
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -69,14 +67,13 @@ namespace llvmRustCompiler
         Value* codegen() override;
     };
 
-    /// 变量 isMutable 表示是否可变变量
+    /// 变量
     class VariableExprAST : public ExprAST {
         std::string Name;
-        int Type;
-        bool IsMutable;
+        TokenType Type;
     public:
-        VariableExprAST(TokenLocation Loc, const std::string& Name, int Type, bool IsMutable)
-            : ExprAST(Loc), Name(Name), Type(Type), IsMutable(IsMutable) {}
+        VariableExprAST(TokenLocation Loc, const std::string& Name, TokenType Type)
+            : ExprAST(Loc), Name(Name), Type(Type) {}
         const std::string& getName() const { return Name; }
         raw_ostream& dump(raw_ostream& out, int ind) override {
             return ExprAST::dump(out << Name, ind);
@@ -139,17 +136,17 @@ namespace llvmRustCompiler
 
     /// 判断表达式（if，else if ， else）
     class IfExprAST : public ExprAST {
-        std::unique_ptr<ExprAST> Cond, ElseIf, Else;
+        std::unique_ptr<ExprAST> Cond, Then, Else;
 
     public:
         IfExprAST(TokenLocation Loc, std::unique_ptr<ExprAST> Cond,
-            std::unique_ptr<ExprAST> ElseIf, std::unique_ptr<ExprAST> Else)
-            : ExprAST(Loc), Cond(std::move(Cond)), ElseIf(std::move(ElseIf)),
+            std::unique_ptr<ExprAST> Then, std::unique_ptr<ExprAST> Else)
+            : ExprAST(Loc), Cond(std::move(Cond)),Then(std::move(Then)),
             Else(std::move(Else)) {}
         raw_ostream& dump(raw_ostream& out, int ind) override {
             ExprAST::dump(out << "if", ind);
             Cond->dump(indent(out, ind) << "Cond:", ind + 1);
-            ElseIf->dump(indent(out, ind) << "ElseIf:", ind + 1);
+            Then->dump(indent(out, ind) << "Then:", ind + 1);
             Else->dump(indent(out, ind) << "Else:", ind + 1);
             return out;
         }
@@ -211,13 +208,13 @@ namespace llvmRustCompiler
     /// 函数定义原型带有返回类型和参数名及类型
     class PrototypeAST {
         std::string Name;
-        std::map<int, std::string> Args;
-        int Type;
+        std::vector<std::pair<TokenType, std::string>> Args;
+        TokenType Type;
         int Line;
     public:
 
         PrototypeAST(TokenLocation Loc, const std::string& Name,
-            std::map<int, std::string> Args, int Type)
+            std::vector<std::pair<TokenType, std::string>> Args, TokenType Type)
             : Name(Name), Args(std::move(Args)), Type(Type), Line(Loc.getLine()){}
 
         const std::string& getName() const { return Name; }

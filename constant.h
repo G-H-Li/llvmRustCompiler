@@ -8,6 +8,7 @@
 
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/LegacyPassManager.h"
 #include "Parser/ast.h"
 #include <map>
 #include <string>
@@ -21,5 +22,6 @@ namespace llvmRustCompiler
 	static IRBuilder<> Builder(TheContext);
 	static std::unique_ptr<Module> TheModule;
 	static std::map<std::string, AllocaInst*> NamedValues;
+	static std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 	static std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
 }
