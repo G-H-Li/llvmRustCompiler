@@ -12,6 +12,7 @@
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Value.h"
 #include "llvm/Support/raw_ostream.h"
+#include "../llvmRustCompiler.h"
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -41,14 +42,29 @@ namespace llvmRustCompiler
         }
     };
 
-    /// 数字
-    class NumberExprAST : public ExprAST {
+    /// 浮点数字,
+    class FPNumberExprAST : public ExprAST {
         double Val;
 
     public:
-        NumberExprAST(TokenLocation Loc, double Val): ExprAST(Loc), Val(Val) {}
+        FPNumberExprAST(TokenLocation Loc, double Val): ExprAST(Loc), Val(Val){}
         raw_ostream& dump(raw_ostream& out, int ind) override {
             return ExprAST::dump(out << Val, ind);
+        }
+        Value* codegen() override;
+    };
+
+    // 整型数值
+    class IntNumberExprAST : public ExprAST {
+        long long Val;
+        int Bits;
+        bool IsSigned;
+
+    public:
+        IntNumberExprAST(TokenLocation Loc, long long Val, int Bits, bool IsSigned) 
+            : ExprAST(Loc), Val(Val), Bits(Bits), IsSigned(IsSigned) {}
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            return ExprAST::dump(out << Val<< Bits<< IsSigned, ind);
         }
         Value* codegen() override;
     };
