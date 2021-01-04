@@ -49,7 +49,7 @@ namespace llvmRustCompiler {
 		// 查看变量名是否被注册
 		Value* V = NamedValues[Name];
 		if (!V) {
-			errorGenerator("未定义的变量名");
+			errorGenerator(std::string("未定义的变量名"));
 			return nullptr;
 		}
 		// Load the value.
@@ -68,7 +68,7 @@ namespace llvmRustCompiler {
 		// 以下应该要修改，万花筒值得用户自定义一元操作符函数，但是本项目中只使用一元操作符
 		Function* F = getFunction(std::string("unary") + Opcode);
 		if (!F) {
-			errorGenerator("未知的一元操作符");
+			errorGenerator(std::string("未知的一元操作符"));
 			return nullptr;
 		}
 		return Builder.CreateCall(F, OperandV, "unop");
@@ -93,24 +93,24 @@ namespace llvmRustCompiler {
 			// 将左部转为变量AST
 			VariableExprAST* LHSE = static_cast<VariableExprAST*>(LHS.get());
 			if (!LHSE) {
-				errorGenerator("等号左边必须为变量");
+				errorGenerator(std::string("等号左边必须为变量"));
 				return nullptr;
 			}
 			// Codegen the RHS.
 			Value* Val = RHS->codegen();
 			if (!Val) {
-				errorGenerator("操作符右侧代码生成错误");
+				errorGenerator(std::string("操作符右侧代码生成错误"));
 				return nullptr;
 			}
 			// 检查变量名是否定义
 			Value* Variable = NamedValues[LHSE->getName()];
 			if (!Variable) {
-				errorGenerator("未定义的变量名");
+				errorGenerator(std::string("未定义的变量名"));
 				return nullptr;
 			}
 			// 判断操作符两侧的类型是否一致
 			if (Val->getType() != Variable->getType()) {
-				errorGenerator("操作符两侧的类型不一致");
+				errorGenerator(std::string("操作符两侧的类型不一致"));
 				return nullptr;
 			}
 			switch (Op) {
@@ -137,7 +137,7 @@ namespace llvmRustCompiler {
 			case '<<=':
 				if (Variable->getType()->isIntegerTy()) Val = Builder.CreateShl(Variable, Val, "shltmp");
 				else {
-					errorGenerator("左移运算必须为整型");
+					errorGenerator(std::string("左移运算必须为整型"));
 					return nullptr;
 				}
 				break;
@@ -145,28 +145,28 @@ namespace llvmRustCompiler {
 				// 算数右移
 				if (Variable->getType()->isIntegerTy()) Val = Builder.CreateAShr(Variable, Val, "ashrtmp");
 				else {
-					errorGenerator("右移运算必须为整型");
+					errorGenerator(std::string("右移运算必须为整型"));
 					return nullptr;
 				}
 				break;
 			case '&=':
 				if (Variable->getType()->isIntegerTy()) Val = Builder.CreateAnd(Variable, Val, "andtmp");
 				else {
-					errorGenerator("与运算必须为整型");
+					errorGenerator(std::string("与运算必须为整型"));
 					return nullptr;
 				}
 				break;
 			case '|=':
 				if (Variable->getType()->isIntegerTy()) Val = Builder.CreateOr(Variable, Val, "ortmp");
 				else {
-					errorGenerator("或运算必须为整型");
+					errorGenerator(std::string("或运算必须为整型"));
 					return nullptr;
 				}
 				break;
 			case '^=':
 				if (Variable->getType()->isIntegerTy()) Val = Builder.CreateXor(Variable, Val, "xortmp");
 				else {
-					errorGenerator("异或运算必须为整型");
+					errorGenerator(std::string("异或运算必须为整型"));
 					return nullptr;
 				}
 				break;
@@ -180,7 +180,7 @@ namespace llvmRustCompiler {
 		Value* L = LHS->codegen();
 		Value* R = RHS->codegen();
 		if (!L || !R) {
-			errorGenerator("表达式无效");
+			errorGenerator(std::string("表达式无效"));
 			return nullptr;
 		}
 		//由于&&和||不需要判断类型是否一致，在此处单独运算
@@ -200,7 +200,7 @@ namespace llvmRustCompiler {
 
 		// 判断操作符两侧的类型是否一致
 		if (L->getType() != R->getType()) {
-			errorGenerator("操作符两侧的类型不一致");
+			errorGenerator(std::string("操作符两侧的类型不一致"));
 			return nullptr;
 		}
 		
@@ -228,7 +228,7 @@ namespace llvmRustCompiler {
 		case '<<':
 			if (L->getType()->isIntegerTy()) return Builder.CreateShl(L, R, "shltmp");
 			else {
-				errorGenerator("左移运算必须为整型");
+				errorGenerator(std::string("左移运算必须为整型"));
 				return nullptr;
 			}
 			break;
@@ -236,28 +236,28 @@ namespace llvmRustCompiler {
 			// 算数右移
 			if (L->getType()->isIntegerTy()) return Builder.CreateAShr(L, R, "ashrtmp");
 			else {
-				errorGenerator("右移运算必须为整型");
+				errorGenerator(std::string("右移运算必须为整型"));
 				return nullptr;
 			}
 			break;
 		case '&':
 			if (L->getType()->isIntegerTy()) return Builder.CreateAnd(L, R, "andtmp");
 			else {
-				errorGenerator("与运算必须为整型");
+				errorGenerator(std::string("与运算必须为整型"));
 				return nullptr;
 			}
 			break;
 		case '|':
 			if (L->getType()->isIntegerTy()) return Builder.CreateOr(L, R, "ortmp");
 			else {
-				errorGenerator("或运算必须为整型");
+				errorGenerator(std::string("或运算必须为整型"));
 				return nullptr;
 			}
 			break;
 		case '^':
 			if (L->getType()->isIntegerTy()) return Builder.CreateXor(L, R, "xortmp");
 			else {
-				errorGenerator("异或运算必须为整型");
+				errorGenerator(std::string("异或运算必须为整型"));
 				return nullptr;
 			}
 			break;
@@ -307,13 +307,13 @@ namespace llvmRustCompiler {
 		// Look up the name in the global module table.
 		Function* CalleeF = getFunction(Callee);
 		if (!CalleeF) {
-			errorGenerator("未知的函数引用");
+			errorGenerator(std::string("未知的函数引用"));
 			return nullptr;
 		}
 
 		// 参数匹配
 		if (CalleeF->arg_size() != Args.size()) {
-			errorGenerator("函数参数匹配错误");
+			errorGenerator(std::string("函数参数匹配错误"));
 			return nullptr;
 		}
 			
@@ -476,7 +476,7 @@ namespace llvmRustCompiler {
 		FunctionProtos[Proto->getName()] = std::move(Proto);
 		Function* TheFunction = getFunction(P.getName());
 		if (!TheFunction) {
-			errorGenerator("函数未定义");
+			errorGenerator(std::string("函数未定义"));
 			return nullptr;
 		}
 
