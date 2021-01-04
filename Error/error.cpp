@@ -20,3 +20,7 @@ void llvmRustCompiler::errorGenerator(const std::string& msg)
 	std::cerr << "Generator Error:" << msg << std::endl;
 }
 
+void llvmRustCompiler::errorParser(const std::string& msg) {
+	std::cerr << "Parser Error:" << msg << std::endl;
+}
+
