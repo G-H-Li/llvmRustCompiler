@@ -23,4 +23,7 @@ namespace llvmRustCompiler
 	//使用字符串进行代码生成阶段错误输出
 	extern void errorGenerator(const std::string& msg);
 
+	//使用字符串进行parser阶段错误输出
+	extern void errorParser(const std::string& msg);
+
 }

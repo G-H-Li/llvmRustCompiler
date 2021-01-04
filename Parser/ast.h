@@ -1,8 +1,8 @@
 #pragma once
 /*
-* Author: Àî¹úºÀ
+* Author: æå›½è±ª
 * Date:2021/1/3
-* description:³éÏóÓï·¨Ê÷¶¨Òå
+* description:æŠ½è±¡è¯­æ³•æ ‘å®šä¹‰
 * latest date:2021/1/4
 */
 
@@ -26,21 +26,22 @@ namespace llvmRustCompiler
         return O << std::string(size, ' ');
     }
 
-    // »ùÀà
+    // åŸºç±»
+
     class ExprAST {
         TokenLocation Loc;
     public:
         ExprAST() {}
         ExprAST(TokenLocation Loc) : Loc(Loc) {}
         virtual ~ExprAST() = default;
-        // ÖĞ¼ä´úÂëÉú³Éº¯Êı
+        // ä¸­é—´ä»£ç ç”Ÿæˆå‡½æ•°
         virtual Value* codegen() = 0;
         virtual raw_ostream& dump(raw_ostream& out, int ind) {
             return out << ':' << Loc.getLine() << ':' << Loc.getCol() << '\n';
         }
     };
 
-    /// Êı×Ö
+    /// æ•°å­—
     class NumberExprAST : public ExprAST {
         double Val;
 
@@ -52,7 +53,7 @@ namespace llvmRustCompiler
         Value* codegen() override;
     };
 
-    /// ±äÁ¿ isMutable ±íÊ¾ÊÇ·ñ¿É±ä±äÁ¿
+    /// å˜é‡ isMutable è¡¨ç¤ºæ˜¯å¦å¯å˜å˜é‡
     class VariableExprAST : public ExprAST {
         std::string Name;
         int Type;
@@ -67,7 +68,7 @@ namespace llvmRustCompiler
         Value* codegen() override;
     };
 
-    /// Ò»Ôª²Ù×÷·û
+    /// ä¸€å…ƒæ“ä½œç¬¦
     class UnaryExprAST : public ExprAST {
         char Opcode;
         std::unique_ptr<ExprAST> Operand;
@@ -83,7 +84,7 @@ namespace llvmRustCompiler
         Value* codegen() override;
     };
 
-    /// ¶şÔª²Ù×÷·û
+    /// äºŒå…ƒæ“ä½œç¬¦
     class BinaryExprAST : public ExprAST {
         char Op;
         std::unique_ptr<ExprAST> LHS, RHS;
@@ -101,7 +102,7 @@ namespace llvmRustCompiler
         Value* codegen() override;
     };
 
-    /// º¯Êıµ÷ÓÃ
+    /// å‡½æ•°è°ƒç”¨
     class CallExprAST : public ExprAST {
         std::string Callee;
         std::vector<std::unique_ptr<ExprAST>> Args;
@@ -120,7 +121,7 @@ namespace llvmRustCompiler
         Value* codegen() override;
     };
 
-    /// ÅĞ¶Ï±í´ïÊ½£¨if£¬else if £¬ else£©
+    /// åˆ¤æ–­è¡¨è¾¾å¼ï¼ˆifï¼Œelse if ï¼Œ elseï¼‰
     class IfExprAST : public ExprAST {
         std::unique_ptr<ExprAST> Cond, ElseIf, Else;
 
@@ -140,7 +141,7 @@ namespace llvmRustCompiler
         Value *codegen() override;
     };
 
-    /// ForÑ­»· - Expression class for for/in.
+    /// Forå¾ªç¯ - Expression class for for/in.
     class ForExprAST : public ExprAST {
         std::string VarName;
         std::unique_ptr<ExprAST> Start, End, Step, Body;
@@ -163,15 +164,15 @@ namespace llvmRustCompiler
         Value* codegen() override;
     };
 
-    // TODO whileÑ­»·
+    // TODO whileå¾ªç¯
     class WhileExprAST : public ExprAST {
     };
-    // TODO loopÑ­»·
+    // TODO loopå¾ªç¯
     class LoopExprAST : public ExprAST {
 
     };
 
-    // ¾Ö²¿±äÁ¿
+    // å±€éƒ¨å˜é‡
     class VarExprAST : public ExprAST {
         std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>> VarNames;
         std::unique_ptr<ExprAST> Body;
@@ -191,13 +192,14 @@ namespace llvmRustCompiler
         Value* codegen() override;
     };
 
-    /// º¯Êı¶¨ÒåÔ­ĞÍ´øÓĞ·µ»ØÀàĞÍºÍ²ÎÊıÃû¼°ÀàĞÍ
+    /// å‡½æ•°å®šä¹‰åŸå‹å¸¦æœ‰è¿”å›ç±»å‹å’Œå‚æ•°ååŠç±»å‹
     class PrototypeAST {
         std::string Name;
         std::map<int, std::string> Args;
         int Type;
         int Line;
     public:
+
         PrototypeAST(TokenLocation Loc, const std::string& Name,
             std::map<int, std::string> Args, int Type)
             : Name(Name), Args(std::move(Args)), Type(Type), Line(Loc.getLine()){}
@@ -208,7 +210,7 @@ namespace llvmRustCompiler
         Function* codegen();
     };
 
-    /// º¯ÊıAST
+    /// å‡½æ•°AST
     class FunctionAST {
         std::unique_ptr<PrototypeAST> Proto;
         std::unique_ptr<ExprAST> Body;

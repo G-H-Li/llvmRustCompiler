@@ -39,7 +39,7 @@ namespace llvmRustCompiler
         addToken("mut", std::make_tuple(TokenValue::KW_MUT, TokenType::tok_keywords, 20));
         addToken("if", std::make_tuple(TokenValue::KW_IF, TokenType::tok_keywords, 20));
         addToken("else", std::make_tuple(TokenValue::KW_ELSE, TokenType::tok_keywords, 20));
-        
+
     }
 
     void Dictionary::addToken(std::string name,

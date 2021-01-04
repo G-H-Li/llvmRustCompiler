@@ -5,15 +5,15 @@
 * latest date:2021/1/3
 */
 
-//TODO:修复Lexer报错依然运行的问题
-
 #include <algorithm>
 #include <cctype>
 #include "scanner.h"
+#include "..\Error\error.h"
 
 namespace llvmRustCompiler
 {
     bool Scanner::errorFlag_ = false;
+    bool Scanner::isFileAvailable_ = true;
 
     Scanner::Scanner(const std::string& srcFileName)
         : fileName_(srcFileName), line_(1), column_(0),
@@ -24,6 +24,8 @@ namespace llvmRustCompiler
         if (input_.fail())
         {
             errorReport("打开文件" + fileName_ + "时出错");
+            isFileAvailable_ = false;
+            errorFlag_ = true;
         }
     }
 
@@ -157,7 +159,7 @@ namespace llvmRustCompiler
 
     Token Scanner::getNextToken()
     {
-        bool matched = false;
+        bool matched = errorFlag_ = false;
 
         do
         {
@@ -213,7 +215,7 @@ namespace llvmRustCompiler
                         state_ = State::IDENTIFIER;
                     }
                     //数字
-                    else if (std::isdigit(currentChar_) || (currentChar_ == '$'))
+                    else if (std::isdigit(currentChar_))
                     {
                         state_ = State::NUMBER;
                     }
@@ -239,6 +241,7 @@ namespace llvmRustCompiler
         makeToken(TokenType::tok_eof, TokenValue::KW_UNRESERVED,
             loc_, std::string("END_OF_FILE"), -1);
         input_.close();
+        isFileAvailable_ = false;
     }
 
     void Scanner::handleNumberState()
@@ -247,22 +250,29 @@ namespace llvmRustCompiler
         bool isFloat = false;
         bool isExponent = false;
         int numberBase = 10;//进制
-
-        if (currentChar_ == '$')
-        {
-            numberBase = 16;
-            // eat $
-            getNextChar();
-        }
-
         enum class NumberState
         {
             INTERGER,//整数
             FRACTION,//浮点数 小数部分
             EXPONENT,//指数 指数部分
-            DONE
+            DONE,   //数字分析完成
+            WRONG   //数字分析错误
         };
         NumberState numberState = NumberState::INTERGER;
+
+        if (currentChar_ == '0')//考虑16进制
+        {
+            addToBuffer(currentChar_);
+            getNextChar();
+            if (currentChar_ == 'x') {
+                numberBase = 16;
+                addToBuffer(currentChar_);
+                getNextChar();
+            }
+            else if (std::isalpha(currentChar_)) {
+                numberState = NumberState::WRONG;
+            }
+        }
 
         do
         {
@@ -292,22 +302,25 @@ namespace llvmRustCompiler
             case NumberState::DONE:
                 break;
 
+            case NumberState::WRONG://后面单独处理
+                break;
+
             default:
                 errorReport("Match number state error.");
                 break;
             }
-            
+
             if (currentChar_ == '.')
             {
-                
+
                 if (isFloat)
                 {
-                    errorReport("已经是浮点数了，没必要再来一个 .");
+                    errorReport(buffer_ + "已经是浮点数了，没必要再来一个 .");
                 }
 
                 if (isExponent)
                 {
-                    errorReport("指数部分不能有 .");
+                    errorReport(buffer_ + "指数部分不能有 .");
                 }
 
                 if (numberBase == 16)
@@ -321,17 +334,33 @@ namespace llvmRustCompiler
             {
                 if (isExponent)
                 {
-                    errorReport("已经是指数了，不能有更多e/E");
+                    errorReport(buffer_ + "已经是指数了，不能有更多e/E");
                 }
                 numberState = NumberState::EXPONENT;
+            }
+            else if(std::isalpha(currentChar_))
+            {
+                numberState = NumberState::WRONG;
+                break;
             }
             else
             {
                 numberState = NumberState::DONE;
             }
+
         } while (numberState != NumberState::DONE);
 
-        if (!getErrorFlag())
+        if (numberState == NumberState::WRONG)
+        {
+            handleWrongState();
+            makeToken(TokenType::tok_unknown, TokenValue::KW_UNRESERVED, loc_,
+                buffer_, buffer_);
+        }
+        else if (errorFlag_) {
+            makeToken(TokenType::tok_unknown, TokenValue::KW_UNRESERVED, loc_,
+                buffer_, buffer_);
+        }
+        else
         {
             if (isFloat || isExponent)
             {
@@ -340,16 +369,22 @@ namespace llvmRustCompiler
             }
             else
             {
-                makeToken(TokenType::tok_integer, TokenValue::KW_UNRESERVED, loc_,
-                    std::stol(buffer_, 0, numberBase), buffer_);
+                switch (numberBase)
+                {
+                case 10:
+                    makeToken(TokenType::tok_integer, TokenValue::KW_UNRESERVED, loc_,
+                        std::stol(buffer_, 0, numberBase), buffer_);
+                    break;
+                case 16:
+                    makeToken(TokenType::tok_integer, TokenValue::KW_UNRESERVED, loc_,
+                        buffer_, buffer_);
+                    break;
+                default:
+                    break;
+                }
             }
         }
-        else
-        {
-            //报错，清空单词缓冲区
-            buffer_.clear();
-            state_ = State::NONE;
-        }
+
     }
 
     void Scanner::handleStringState()
@@ -392,6 +427,17 @@ namespace llvmRustCompiler
     void Scanner::handleIdentifierState()
     {
         loc_ = getTokenLocation();
+        //标识符以 _ 开头时后面必须跟字母
+        if (currentChar_ == '_') {
+            addToBuffer(currentChar_);
+            getNextChar();
+            if (!std::isalpha(currentChar_)) {
+                handleWrongState();
+                makeToken(TokenType::tok_unknown, TokenValue::KW_UNRESERVED, loc_,
+                    buffer_, buffer_);
+                return;
+            }
+        }
         addToBuffer(currentChar_);
         getNextChar();
         //标识符接受字母、数字和 _
@@ -400,7 +446,7 @@ namespace llvmRustCompiler
             addToBuffer(currentChar_);
             getNextChar();
         }
-        
+
         std::transform(buffer_.begin(), buffer_.end(), buffer_.begin(), ::tolower);
         //检查是否是关键字
         auto tokenMeta = dictionary_.lookup(buffer_);
@@ -479,7 +525,7 @@ namespace llvmRustCompiler
 
         if (currentChar_ != '+' && currentChar_ != '-' && !std::isdigit(currentChar_))
         {
-            errorReport(std::string("Scientist presentation number after e / E should be + / - or digits but find ") + '\'' + currentChar_ + '\'');
+            errorReport("指数部分只能是数字");
         }
 
         if (currentChar_ == '+' || currentChar_ == '-')
@@ -495,6 +541,16 @@ namespace llvmRustCompiler
         }
     }
 
+    void Scanner::handleWrongState() 
+    {
+        errorReport("非法的标识符或数字:");
+        do 
+        {
+            addToBuffer(currentChar_);
+            getNextChar();
+        } while (!std::isspace(currentChar_));
+    }
+
     void Scanner::errorReport(const std::string& msg)
     {
         errorToken(getTokenLocation().toString() + msg);
@@ -503,5 +559,10 @@ namespace llvmRustCompiler
     void Scanner::setErrorFlag(bool flag)
     {
         errorFlag_ = flag;
+    }
+
+    void Scanner::setFileAvailable(bool flag)
+    {
+        isFileAvailable_ = flag;
     }
 }

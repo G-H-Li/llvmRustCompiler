@@ -4,11 +4,10 @@
 * description:token函数成员的实现
 * latest date:2021/1/3
 */
-#ifndef TOKEN_CPP_
-#define TOKEN_CPP_
+
 #include "token.h"
 
-namespace llvmRustCompiler 
+namespace llvmRustCompiler
 {
     TokenLocation::TokenLocation(const std::string& fileName, int line, int column)
         : fileName_(fileName), line_(line), column_(column)
@@ -23,7 +22,7 @@ namespace llvmRustCompiler
     }
 
     Token::Token() : type_(TokenType::tok_unknown), value_(TokenValue::KW_UNRESERVED),
-        location_(std::string(""), 0, 0), name_(""), symbolPrecedence_(-1),floatValue_(0),intValue_(0)
+        location_(std::string(""), 0, 0), name_(""), symbolPrecedence_(-1), floatValue_(0), intValue_(0)
     {}
 
     Token::Token(TokenType type, TokenValue value, const TokenLocation& location,
@@ -118,5 +117,3 @@ namespace llvmRustCompiler
             << "\t" << name_ << "\t\t" << getSymbolPrecedence() << std::endl;
     }
 }
-
-#endif

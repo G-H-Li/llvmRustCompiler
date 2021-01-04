@@ -1,7 +1,7 @@
-ï»¿/*
+/*
 * Author: zqf
 * Date:2021/1/2
-* description:æšä¸¾ç±»å‹ã€å…³é”®å­—ã€å®šä¹‰tokenç­‰
+* description:Ã¶¾ÙÀàĞÍ¡¢¹Ø¼ü×Ö¡¢¶¨ÒåtokenµÈ
 * latest date:2021/1/3
 */
 
@@ -14,29 +14,30 @@
 #include <map>
 #include <cassert>
 
+
 namespace llvmRustCompiler
 {
-    //å•è¯çš„ç±»å‹
-	enum class TokenType
-	{
+    //µ¥´ÊµÄÀàĞÍ
+    enum class TokenType
+    {
         tok_integer,
         tok_float,
         tok_bool,
         tok_char,
         tok_string,
 
-        tok_identifier, //æ ‡è¯†ç¬¦
-        tok_keywords,   //å…³é”®å­—
-        tok_operators,  //æ“ä½œç¬¦
-        tok_delimiter,  //åˆ†éš”ç¬¦
-        tok_eof,        //ç»“å°¾
+        tok_identifier, //±êÊ¶·û
+        tok_keywords,   //¹Ø¼ü×Ö
+        tok_operators,  //²Ù×÷·û
+        tok_delimiter,  //·Ö¸ô·û
+        tok_eof,        //½áÎ²
         tok_unknown
-	};
+    };
 
-    //å…³é”®å­—ã€ç¬¦å·ç­‰
-    enum class TokenValue 
+    //¹Ø¼ü×Ö¡¢·ûºÅµÈ
+    enum class TokenValue
     {
-        //å…³é”®å­—
+        //¹Ø¼ü×Ö
         KW_AS,      // as
         KW_BREAK,   // break
         KW_CONST,   // const
@@ -72,9 +73,9 @@ namespace llvmRustCompiler
         KW_USE,     // use
         KW_WHERE,   // where
         KW_WHILE,   // while
-        KW_UNRESERVED,//æœªä½¿ç”¨çš„å…³é”®å­—
+        KW_UNRESERVED,//Î´Ê¹ÓÃµÄ¹Ø¼ü×Ö
 
-        //ç¬¦å·
+        //·ûºÅ
         LEFT_PAREN,        // (
         RIGHT_PAREN,       // )
         LEFT_BRACE,       // {
@@ -95,7 +96,7 @@ namespace llvmRustCompiler
         POINTER            // ->
     };
 
-    //ä½ç½®ä¿¡æ¯,ç”¨äºæ£€ç´¢ã€æ ‡é”™
+    //Î»ÖÃĞÅÏ¢,ÓÃÓÚ¼ìË÷¡¢±ê´í
     class TokenLocation
     {
     public:
@@ -114,16 +115,16 @@ namespace llvmRustCompiler
     {
     public:
         Token();
-        //ç¬¦å·
+        //·ûºÅ
         Token(TokenType type, TokenValue value, const TokenLocation& location,
             std::string name, int symbolPrecedence);
-        //æ ‡è¯†ç¬¦ã€å…³é”®å­—ã€ç±»å‹åã€å­—ç¬¦ä¸²å¸¸é‡ã€å¸ƒå°”ç±»å‹å¸¸é‡ç­‰
+        //±êÊ¶·û¡¢¹Ø¼ü×Ö¡¢ÀàĞÍÃû¡¢×Ö·û´®³£Á¿¡¢²¼¶ûÀàĞÍ³£Á¿µÈ
         Token(TokenType type, TokenValue value, const TokenLocation& location,
             const std::string& strValue, std::string name);
-        //æ•´æ•°å¸¸é‡
+        //ÕûÊı³£Á¿
         Token(TokenType type, TokenValue value, const TokenLocation& location,
             long intValue, std::string name);
-        //æµ®ç‚¹æ•°å¸¸é‡
+        //¸¡µãÊı³£Á¿
         Token(TokenType type, TokenValue value, const TokenLocation& location,
             float floatValue, std::string name);
 
@@ -132,10 +133,10 @@ namespace llvmRustCompiler
         const TokenLocation& getTokenLocation() const;
         std::string getTokenName() const;
 
-        //è·å–ä¼˜å…ˆçº§
+        //»ñÈ¡ÓÅÏÈ¼¶
         int getSymbolPrecedence() const;
 
-        //è·å–å…·ä½“çš„å€¼
+        //»ñÈ¡¾ßÌåµÄÖµ
         long getIntValue() const;
         float getFloatValue() const;
         std::string getStringValue() const;
@@ -154,7 +155,7 @@ namespace llvmRustCompiler
         std::string     name_;
         int             symbolPrecedence_;
 
-        //å¸¸é‡å€¼
+        //³£Á¿Öµ
         long            intValue_;
         float          floatValue_;
         std::string     strValue_;
@@ -209,4 +210,3 @@ namespace llvmRustCompiler
 }
 
 #endif
-
