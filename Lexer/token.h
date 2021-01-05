@@ -100,6 +100,7 @@ namespace llvmRustCompiler
         PERIOD,            // .
         SEMICOLON,         // ;
         COLON,             // :
+        TRAVERSE,          // ..
 
         PLUS,              // +
         MINUS,             // -
