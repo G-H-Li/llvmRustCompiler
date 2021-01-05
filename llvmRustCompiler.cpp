@@ -36,7 +36,11 @@ namespace llvmRustCompiler {
     //语法分析器测试
     void parserTest()
     {
+        string fileAddress = "C:\\Users\\izumi\\Desktop\\code.txt";
+        Scanner scanner(fileAddress);
 
+        Parser parser(scanner);
+        parser.main();
     }
 
     //生成器测试
@@ -48,6 +52,7 @@ namespace llvmRustCompiler {
 
 int main()
 {
-    lexerTest();
+    //lexerTest();
+    parserTest();
     return 0;
 }
