@@ -27,6 +27,7 @@ namespace llvmRustCompiler {
 	private:
 		std::unique_ptr<ExprAST> ParseExpression();
 		std::unique_ptr<ExprAST> ParseFPNumberExpr();
+		std::unique_ptr<ExprAST> ParseIntNumberExpr();
 		std::unique_ptr<ExprAST> ParseParenExpr();
 		std::unique_ptr<ExprAST> ParseIdentifierExpr();
 		std::unique_ptr<ExprAST> ParseLet();

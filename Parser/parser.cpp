@@ -25,7 +25,19 @@ namespace llvmRustCompiler {
         return std::move(Result);
     };
 
+    //解析整数
+    std::unique_ptr<ExprAST> Parser::ParseIntNumberExpr() {
+        //获取整数的位置和值
+        TokenLocation location = scanner.getToken().getTokenLocation();
+        int value = scanner.getToken().getIntValue();
 
+        int bites = 32;//太难判断了，默认32位整数
+        bool IsSigned = true; //不好判断，直接默认是带符号的
+
+        auto Result = std::make_unique<IntNumberExprAST>(location, value, bites, IsSigned);
+        scanner.getNextToken(); token = scanner.getToken(); // consume the number
+        return std::move(Result);
+    }
 
     /// parenexpr ::= '(' expression ')'
     std::unique_ptr<ExprAST> Parser::ParseParenExpr() {
@@ -287,8 +299,11 @@ namespace llvmRustCompiler {
             return ParseIdentifierExpr();
 
         case TokenType::tok_float:
-        case TokenType::tok_integer:
             return ParseFPNumberExpr();
+            break;
+        case TokenType::tok_integer:
+            return ParseIntNumberExpr();
+            break;
         default:
             //小层for循环处理 let ( if for
             switch (scanner.getToken().getTokenValue())
