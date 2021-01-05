@@ -2,7 +2,7 @@
 //
 
 #include "llvmRustCompiler.h"
-#include "Lexer/scanner.cpp"
+using namespace llvmRustCompiler;
 using namespace std;
 
 namespace llvmRustCompiler {
@@ -44,10 +44,10 @@ namespace llvmRustCompiler {
     {
 
     }
+}
 
-    int main()
-    {
-
-        return 0;
-    }
+int main()
+{
+    lexerTest();
+    return 0;
 }
