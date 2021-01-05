@@ -14,23 +14,22 @@
 
 namespace llvmRustCompiler {
 
-	
-	/// numberexpr ::= number
-	std::unique_ptr<ExprAST> Parser::ParseFPNumberExpr() {
-		//获取小数的位置和值
-		TokenLocation location = scanner.getToken().getTokenLocation();
-		float value = scanner.getToken().getFloatValue();
+    /// numberexpr ::= number
+    std::unique_ptr<ExprAST> Parser::ParseFPNumberExpr() {
+        //获取小数的位置和值
+        TokenLocation location = scanner.getToken().getTokenLocation();
+        float value = scanner.getToken().getFloatValue();
 
-		auto Result = std::make_unique<FPNumberExprAST>(location, value);
-		scanner.getNextToken(); // consume the number
-		return std::move(Result);
-	};
+        auto Result = std::make_unique<FPNumberExprAST>(location, value);
+        scanner.getNextToken(); token = scanner.getToken(); // consume the number
+        return std::move(Result);
+    };
 
 
 
     /// parenexpr ::= '(' expression ')'
     std::unique_ptr<ExprAST> Parser::ParseParenExpr() {
-        scanner.getNextToken(); // eat (.
+        scanner.getNextToken(); token = scanner.getToken(); // eat (.
         auto V = ParseExpression();
         if (!V)
             return nullptr;
@@ -40,7 +39,7 @@ namespace llvmRustCompiler {
             return nullptr;
         }
 
-        scanner.getNextToken(); // eat ).
+        scanner.getNextToken(); token = scanner.getToken(); // eat ).
         return V;
     }
 
@@ -48,23 +47,23 @@ namespace llvmRustCompiler {
     ///   ::= identifier
     ///   ::= identifier '(' expression* ')'
     std::unique_ptr<ExprAST> Parser::ParseIdentifierExpr() {
-        std::string IdName = scanner.getToken().getStringValue();
+        std::string IdName = scanner.getToken().getTokenName();
 
-        scanner.getNextToken(); // eat identifier.
+        scanner.getNextToken(); token = scanner.getToken(); // eat identifier.
 
 
         // 判断变量类型
         TokenType Type = TokenType::tok_float;//首先默认是浮点数型
         if (scanner.getToken().getTokenValue() == TokenValue::COLON) //判断是否等于冒号 :
         {
-            scanner.getNextToken();
-            if (scanner.getToken().getTokenType() == TokenType::tok_integer) {
+            scanner.getNextToken(); token = scanner.getToken();
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_I32) {
                 Type = TokenType::tok_integer;
-                scanner.getNextToken();
+                scanner.getNextToken(); token = scanner.getToken();
             }
-            if (scanner.getToken().getTokenType() == TokenType::tok_float) {
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_F32) {
                 Type = TokenType::tok_float;
-                scanner.getNextToken();
+                scanner.getNextToken(); token = scanner.getToken();
             }
         }
 
@@ -77,7 +76,7 @@ namespace llvmRustCompiler {
 
 
         // Call.
-        scanner.getNextToken(); // eat (
+        scanner.getNextToken(); token = scanner.getToken(); // eat (
         std::vector<std::unique_ptr<ExprAST>> Args;
         if (scanner.getToken().getTokenValue() != TokenValue::RIGHT_PAREN) {
             while (true) {
@@ -93,12 +92,12 @@ namespace llvmRustCompiler {
                     errorParser("Expected ')' or ',' in argument list");
                     return nullptr;
                 }
-                scanner.getNextToken();
+                scanner.getNextToken(); token = scanner.getToken();
             }
         }
 
         // Eat the ')'.
-        scanner.getNextToken();
+        scanner.getNextToken(); token = scanner.getToken();
 
         //获取函数调用地址Calllocation
         TokenLocation CallLocation = scanner.getToken().getTokenLocation();
@@ -108,14 +107,14 @@ namespace llvmRustCompiler {
 
     //解析let mut x = 3;
     std::unique_ptr<ExprAST> Parser::ParseLet() {
-        scanner.getNextToken(); //吃掉let
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉let
 
         //判断有无 mut 确定是否是常量
         bool isConst = false;
         if (scanner.getToken().getTokenValue() == TokenValue::KW_MUT)
         {
             isConst = true;
-            scanner.getNextToken();
+            scanner.getNextToken(); token = scanner.getToken();
         }
 
         if (scanner.getToken().getTokenType() != TokenType::tok_identifier)
@@ -128,7 +127,7 @@ namespace llvmRustCompiler {
 
     /// ifexpr ::= 'if' expression 'then' expression 'else' expression
     std::unique_ptr<ExprAST> Parser::ParseIfExpr() {
-        scanner.getNextToken(); // eat the if.
+        scanner.getNextToken(); token = scanner.getToken(); // eat the if.
 
         // condition.
         auto Cond = ParseExpression();
@@ -139,14 +138,14 @@ namespace llvmRustCompiler {
         std::vector<std::unique_ptr<ExprAST>> If;
 
 
-        scanner.getNextToken(); //吃掉左大括号 {
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉左大括号 {
 
         while (scanner.getToken().getTokenValue() != TokenValue::RIGHT_BRACE) {
             If.push_back(std::move(ParseExpression()));
-            scanner.getNextToken(); //吃掉函数体中的分号 ';'
+            scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
         }
 
-        scanner.getNextToken(); //吃掉右大括号
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉右大括号
 
 
         if (scanner.getToken().getTokenValue() != TokenValue::KW_ELSE) {
@@ -154,20 +153,20 @@ namespace llvmRustCompiler {
             return nullptr;
         }
 
-        scanner.getNextToken(); //吃掉else
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉else
 
         //else函数体内的内容
         std::vector<std::unique_ptr<ExprAST>> Else;
 
 
-        scanner.getNextToken(); //吃掉左大括号 {
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉左大括号 {
 
         while (scanner.getToken().getTokenValue() != TokenValue::RIGHT_BRACE) {
             Else.push_back(std::move(ParseExpression()));
-            scanner.getNextToken(); //吃掉函数体中的分号 ';'
+            scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
         }
 
-        scanner.getNextToken(); //吃掉右大括号
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉右大括号
 
         TokenLocation location = scanner.getToken().getTokenLocation();
 
@@ -177,21 +176,21 @@ namespace llvmRustCompiler {
 
     /// forexpr ::= 'for' identifier '=' expr ',' expr (',' expr)? 'in' expression
     std::unique_ptr<ExprAST> Parser::ParseForExpr() {
-        scanner.getNextToken(); // eat the for.
+        scanner.getNextToken(); token = scanner.getToken(); // eat the for.
 
         if (scanner.getToken().getTokenType() != TokenType::tok_identifier) {
             errorParser("expected identifier after for");
             return nullptr;
         }
 
-        std::string IdName = scanner.getToken().getStringValue(); //解析到 "for i"
-        scanner.getNextToken(); // eat identifier.
+        std::string IdName = scanner.getToken().getTokenName(); //解析到 "for i"
+        scanner.getNextToken(); token = scanner.getToken(); // eat identifier.
 
         if (scanner.getToken().getTokenValue() != TokenValue::KW_IN) {
             errorParser("expected 'in' after for");
             return nullptr;
         }
-        scanner.getNextToken(); // eat 'in'.  //解析到 "for i in"
+        scanner.getNextToken(); token = scanner.getToken(); // eat 'in'.  //解析到 "for i in"
 
         auto Start = ParseExpression(); //解析到 "for i in 0"
         if (!Start)
@@ -200,8 +199,8 @@ namespace llvmRustCompiler {
             errorParser("expected '.' after for start value");
             return nullptr;
         }
-        scanner.getNextToken(); //吃掉第一个 '.' 解析到 " for i in 0. "
-        scanner.getNextToken(); //吃掉第二个 '.' 解析到 " for i in 0.. "
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉第一个 '.' 解析到 " for i in 0. "
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉第二个 '.' 解析到 " for i in 0.. "
 
         auto End = ParseExpression(); //解析到 " for i in 0..100 "
         if (!End)
@@ -222,14 +221,14 @@ namespace llvmRustCompiler {
         std::vector<std::unique_ptr<ExprAST>> Body;
 
 
-        scanner.getNextToken(); //吃掉左大括号 {
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉左大括号 {
 
         while (scanner.getToken().getTokenValue() != TokenValue::RIGHT_BRACE) {
             Body.push_back(std::move(ParseExpression()));
-            scanner.getNextToken(); //吃掉函数体中的分号 ';'
+            scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
         }
 
-        scanner.getNextToken(); //吃掉右大括号
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉右大括号
 
         TokenLocation location = scanner.getToken().getTokenLocation();
         return std::make_unique<ForExprAST>(location, IdName, std::move(Start), std::move(End),
@@ -289,7 +288,7 @@ namespace llvmRustCompiler {
 
             // Okay, we know this is a binop.
             int BinOp = (int)scanner.getToken().getTokenValue(); //需要操作符的ASCII码值
-            scanner.getNextToken(); // eat binop
+            scanner.getNextToken(); token = scanner.getToken(); // eat binop
 
             // Parse the primary expression after the binary operator.
             auto RHS = ParsePrimary();
@@ -317,33 +316,32 @@ namespace llvmRustCompiler {
     ///解析 函数声明中括号的一个参数。 形状如 " f : i32"
     std::unique_ptr<VariableExprAST> Parser::ParseArgument() {
         if (scanner.getToken().getTokenType() != TokenType::tok_identifier) {
-            errorParser("无参数名");
+            errorParser("no argument name");
             return nullptr;
         }
 
-        std::string ArgumentName = scanner.getToken().getStringValue();
-        scanner.getNextToken();//吃掉函数名
+        std::string ArgumentName = scanner.getToken().getTokenName();
+        scanner.getNextToken(); token = scanner.getToken();//吃掉参数名
 
         // 判断变量类型
         TokenType Type = TokenType::tok_float;//首先默认是浮点数型
         if (scanner.getToken().getTokenValue() == TokenValue::COLON) //判断是否等于冒号 :
         {
-            scanner.getNextToken();
-            if (scanner.getToken().getTokenType() == TokenType::tok_integer) {
+            scanner.getNextToken(); token = scanner.getToken();
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_I32) {
                 Type = TokenType::tok_integer;
-                scanner.getNextToken();
+                scanner.getNextToken(); token = scanner.getToken();
             }
-            if (scanner.getToken().getTokenType() == TokenType::tok_float) {
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_F32) {
                 Type = TokenType::tok_float;
-                scanner.getNextToken();
+                scanner.getNextToken(); token = scanner.getToken();
             }
         }
 
         //获取地址
         TokenLocation location = scanner.getToken().getTokenLocation();
 
-        if (scanner.getToken().getTokenValue() != TokenValue::LEFT_PAREN) // Simple variable ref.
-            return std::make_unique<VariableExprAST>(location, ArgumentName, Type);
+        return std::make_unique<VariableExprAST>(location, ArgumentName, Type);
 
     }
 
@@ -367,15 +365,15 @@ namespace llvmRustCompiler {
             return nullptr;
         }
 
-        std::string FnName = scanner.getToken().getStringValue();
-        scanner.getNextToken();
+        std::string FnName = scanner.getToken().getTokenName();
+        scanner.getNextToken(); token = scanner.getToken();
 
         if (scanner.getToken().getTokenValue() != TokenValue::LEFT_PAREN) {
             errorParser("Expected '(' in prototype");
             return nullptr;
         }
 
-        scanner.getNextToken(); //吃掉(
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉(
 
 
         //std::vector<std::unique_ptr<ExprAST>> ArgNames;
@@ -401,10 +399,10 @@ namespace llvmRustCompiler {
             Args.push_back(std::move(Arg));
             if (scanner.getToken().getTokenValue() == TokenValue::RIGHT_PAREN)
                 break;
-            scanner.getNextToken(); //吃掉 ','
+            scanner.getNextToken(); token = scanner.getToken(); //吃掉 ','
         }
 
-        scanner.getNextToken(); // eat ')'.
+        scanner.getNextToken(); token = scanner.getToken(); // eat ')'.
 
 
         /*while (scanner.getNextToken() == TokenType::tok_identifier)
@@ -416,16 +414,16 @@ namespace llvmRustCompiler {
         TokenType return_type = TokenType::tok_float; //默认返回类型是float
         if (scanner.getToken().getTokenValue() == TokenValue::POINTER)
         {
-            scanner.getNextToken(); //吃掉 ->
-            if (scanner.getToken().getTokenType() == TokenType::tok_integer)
+            scanner.getNextToken(); token = scanner.getToken(); //吃掉 ->
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_I32)
             {
                 return_type = TokenType::tok_integer;
-                scanner.getNextToken(); //吃掉类型
+                scanner.getNextToken(); token = scanner.getToken(); //吃掉类型
             }
-            if (scanner.getToken().getTokenType() == TokenType::tok_float)
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_F32)
             {
                 return_type = TokenType::tok_float;
-                scanner.getNextToken(); //吃掉类型
+                scanner.getNextToken(); token = scanner.getToken(); //吃掉类型
             }
         }
 
@@ -437,7 +435,7 @@ namespace llvmRustCompiler {
 
     /// definition ::= 'def' prototype expression
     std::unique_ptr<FunctionAST> Parser::ParseDefinition() {
-        scanner.getNextToken(); // eat def.
+        scanner.getNextToken(); token = scanner.getToken(); // eat def.
         auto Proto = ParsePrototype();
         if (!Proto)
             return nullptr;
@@ -447,13 +445,13 @@ namespace llvmRustCompiler {
             return nullptr;
         std::vector<std::unique_ptr<ExprAST>> Body;
 
-        scanner.getNextToken(); //吃掉左大括号
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉左大括号
         while (scanner.getToken().getTokenValue() != TokenValue::RIGHT_BRACE) {
             Body.push_back(std::move(ParseExpression()));
-            scanner.getNextToken(); //吃掉函数体中的分号 ';'
+            scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
         }
 
-        scanner.getNextToken(); //吃掉右大括号
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉右大括号
         /*if (auto E = ParseExpression())
             return std::make_unique<FunctionAST>(std::move(Proto), std::move(E));*/
 
@@ -479,14 +477,14 @@ namespace llvmRustCompiler {
         }
         return nullptr;
     }
-    
+
     void Parser::HandleDefinition() {
         if (ParseDefinition()) {
             fprintf(stderr, "Read function definition: \n");
         }
         else {
             // Skip token for error recovery.
-            scanner.getNextToken();
+            scanner.getNextToken(); token = scanner.getToken();
         }
     }
 
@@ -498,7 +496,7 @@ namespace llvmRustCompiler {
         }
         else {
             // Skip token for error recovery.
-            scanner.getNextToken();
+            scanner.getNextToken(); token = scanner.getToken();
         }
     }
 
@@ -511,24 +509,20 @@ namespace llvmRustCompiler {
 
             case TokenType::tok_eof:
                 return;
-            case TokenType::tok_keywords: {
-                if (scanner.getToken().getTokenValue() == TokenValue::SEMICOLON) {
-                    scanner.getNextToken();
-                    break;
-                }
-                else if (scanner.getToken().getTokenValue() == TokenValue::KW_FN) {
+            case TokenType::tok_delimiter:
+                scanner.getNextToken(); token = scanner.getToken();
+                break;
+            default: {
+                switch (scanner.getToken().getTokenValue()) {
+
+                case TokenValue::KW_FN:
                     HandleDefinition();
                     break;
-                }
-                else if (scanner.getToken().getTokenValue() == TokenValue::KW_IF) {
-                    ParseIfExpr();
+                default:
+                    HandleTopLevelExpression();
                     break;
                 }
-
             }
-            default:
-                HandleTopLevelExpression();
-                break;
             }
         }
     }
@@ -538,7 +532,10 @@ namespace llvmRustCompiler {
 
         // Prime the first token.
         fprintf(stderr, "ready> ");
-        scanner.getNextToken();
+        scanner.getNextToken(); token = scanner.getToken();
+
+
+        //token = scanner.getToken();
 
         // Run the main "interpreter loop" now.
         MainLoop();

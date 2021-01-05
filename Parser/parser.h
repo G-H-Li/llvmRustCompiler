@@ -15,13 +15,14 @@ namespace llvmRustCompiler {
 	class Parser
 	{
 	public:
-		Parser(Scanner& _scanner) : scanner(_scanner) {};
+		Parser(Scanner& _scanner) : scanner(_scanner), token(scanner.getToken()) {};
 		Parser();
-		~Parser();
+		//添加了默认析构函数
+		~Parser() = default;
 
 	private:
 		Scanner& scanner;
-
+		Token token;
 
 	private:
 		std::unique_ptr<ExprAST> ParseExpression();
@@ -41,16 +42,16 @@ namespace llvmRustCompiler {
 
 
 	private:
-        void HandleDefinition();
-        void HandleTopLevelExpression();
-        /// top ::= definition | external | expression | ';'
-        void MainLoop();
+		void HandleDefinition();
+		void HandleTopLevelExpression();
+		/// top ::= definition | external | expression | ';'
+		void MainLoop();
 
-    
-    public:
-        //===----------------------------------------------------------------------===//
-        // Main driver code.
-        //===----------------------------------------------------------------------===//
+
+	public:
+		//===----------------------------------------------------------------------===//
+		// Main driver code.
+		//===----------------------------------------------------------------------===//
 		int main();
 	};
 }
