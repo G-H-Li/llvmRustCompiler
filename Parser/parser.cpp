@@ -320,6 +320,41 @@ namespace llvmRustCompiler {
             }
         }
 
+
+        ///解析 函数声明中括号的一个参数。 形状如 " f : i32"
+        std::unique_ptr<VariableExprAST> ParseArgument() {
+            if (scanner.getToken().getTokenType() != TokenType::tok_identifier) {
+                errorParser("无参数名");
+                return nullptr;
+            }
+
+            std::string ArgumentName = scanner.getToken().getStringValue();
+            scanner.getNextToken();//吃掉函数名
+
+            // 判断变量类型
+            TokenType Type = TokenType::tok_float;//首先默认是浮点数型
+            if (scanner.getToken().getTokenValue() == TokenValue::COLON) //判断是否等于冒号 :
+            {
+                scanner.getNextToken();
+                if (scanner.getToken().getTokenType() == TokenType::tok_integer) {
+                    Type = TokenType::tok_integer;
+                    scanner.getNextToken();
+                }
+                if (scanner.getToken().getTokenType() == TokenType::tok_float) {
+                    Type = TokenType::tok_float;
+                    scanner.getNextToken();
+                }
+            }
+
+            //获取地址
+            TokenLocation location = scanner.getToken().getTokenLocation();
+
+            if (scanner.getToken().getTokenValue() != TokenValue::LEFT_PAREN) // Simple variable ref.
+                return std::make_unique<VariableExprAST>(location, ArgumentName, Type);
+
+        }
+
+
         /// expression
         ///   ::= primary binoprhs
         ///
@@ -353,16 +388,24 @@ namespace llvmRustCompiler {
             //std::vector<std::unique_ptr<ExprAST>> ArgNames;
             
             //参数容器
-            std::vector<std::pair<TokenType, std::string>> ArgNames;
-
+            std::vector<std::pair<TokenType, std::string>> Args;
+            //一个参数的容器
+            std::pair<TokenType, std::string> Arg;
+            
             //添加参数
-
             while (scanner.getToken().getTokenValue() != TokenValue::RIGHT_PAREN) {
 
                 //获取一个参数
-                std::unique_ptr<ExprAST> E = ParseIdentifierExpr();
-                
-                ArgNames.push_back(std::move(ParseIdentifierExpr()));
+                std::unique_ptr<VariableExprAST> E = ParseArgument();
+                TokenType  type = E->getType();
+                std::string name = E->getName();
+
+                //为pair赋值
+                Arg.first = type;
+                Arg.second = name;
+
+                //将参数传入容器
+                Args.push_back(std::move(Arg));
                 if (scanner.getToken().getTokenValue() == TokenValue::RIGHT_PAREN)
                     break;
                 scanner.getNextToken(); //吃掉 ','
@@ -376,25 +419,27 @@ namespace llvmRustCompiler {
             if (scanner.getToken().getTokenValue() != TokenValue::RIGHT_PAREN)
                 return LogErrorP("Expected ')' in prototype");*/
 
-                //判断返回类型
-            int return_type = 0;
+             //判断返回类型
+            TokenType return_type = TokenType::tok_float; //默认返回类型是float
             if (scanner.getToken().getTokenValue() == TokenValue::POINTER)
             {
-                scanner.getNextToken(); //吃掉lamda
+                scanner.getNextToken(); //吃掉 ->
                 if (scanner.getToken().getTokenType() == TokenType::tok_integer)
                 {
-                    return_type =(int) TokenType::tok_integer;
+                    return_type = TokenType::tok_integer;
                     scanner.getNextToken(); //吃掉类型
                 }
                 if (scanner.getToken().getTokenType() == TokenType::tok_float)
                 {
-                    return_type = (int)TokenType::tok_float;
+                    return_type = TokenType::tok_float;
                     scanner.getNextToken(); //吃掉类型
                 }
             }
 
+            //获取地址
+            TokenLocation location = scanner.getToken().getTokenLocation();
 
-            return std::make_unique<PrototypeAST>(FnName, std::move(ArgNames), return_type);
+            return std::make_unique<PrototypeAST>(location,FnName, std::move(Args), return_type);
         }
 
         /// definition ::= 'def' prototype expression
@@ -427,7 +472,7 @@ namespace llvmRustCompiler {
             if (auto E = ParseExpression()) {
                 // Make an anonymous proto.
                 auto Proto = std::make_unique<PrototypeAST>("__anon_expr",
-                    std::vector<std::unique_ptr<ExprAST>>(), 0);
+                    std::vector<std::unique_ptr<ExprAST>>(), TokenType::tok_float);
 
                 //修改了函数体为数组，因此要添加一个数组创建FunctionAST
 

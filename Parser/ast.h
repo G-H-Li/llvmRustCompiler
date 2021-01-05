@@ -244,8 +244,11 @@ namespace llvmRustCompiler
         int Line;
     public:
 
-        PrototypeAST(TokenLocation Loc, const std::string& Name,
-            std::vector<std::pair<TokenType, std::string>> Args, TokenType Type)
+        PrototypeAST(TokenLocation Loc, 
+            const std::string& Name,
+            std::vector<std::pair<TokenType,
+            std::string>> Args,
+            TokenType Type)
             : Name(Name), Args(std::move(Args)), Type(Type), Line(Loc.getLine()){}
 
         const std::string& getName() const { return Name; }
@@ -255,20 +258,22 @@ namespace llvmRustCompiler
     };
 
     /// 函数AST
+    /// 函数体包含多条语句，改成std::vector<std::unique_ptr<ExprAST>>
     class FunctionAST {
         std::unique_ptr<PrototypeAST> Proto;
-        std::unique_ptr<ExprAST> Body;
+        std::vector<std::unique_ptr<ExprAST>> Body;
 
     public:
         FunctionAST(std::unique_ptr<PrototypeAST> Proto,
-            std::unique_ptr<ExprAST> Body)
+            std::vector<std::unique_ptr<ExprAST>> Body)
             : Proto(std::move(Proto)), Body(std::move(Body)) {}
         
         raw_ostream& dump(raw_ostream& out, int ind) {
             indent(out, ind) << "FunctionAST\n";
             ++ind;
             indent(out, ind) << "Body:";
-            return Body ? Body->dump(out, ind) : out << "null\n";
+
+            return Body.at(0) ? Body.at(0)->dump(out, ind) : out << "null\n";
         }
         Function* codegen();
     };
