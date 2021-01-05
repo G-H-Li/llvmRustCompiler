@@ -25,8 +25,12 @@ namespace llvmRustCompiler {
 	private:
 
         /// numberexpr ::= number
-        std::unique_ptr<ExprAST> ParseNumberExpr() {
-            auto Result = std::make_unique<NumberExprAST>(NumVal);
+        std::unique_ptr<ExprAST> ParseFPNumberExpr() {
+            //获取小数的位置和值
+            TokenLocation location = scanner.getToken().getTokenLocation();
+            float value = scanner.getToken().getFloatValue();
+
+            auto Result = std::make_unique<FPNumberExprAST>(location, value);
             scanner.getNextToken(); // consume the number
             return std::move(Result);
         }
@@ -57,22 +61,25 @@ namespace llvmRustCompiler {
 
 
             // 判断变量类型
-            int Type = 0; //默认无类型
+            TokenType Type = TokenType::tok_float;//首先默认是浮点数型
             if (scanner.getToken().getTokenValue() == TokenValue::COLON) //判断是否等于冒号 :
             {
                 scanner.getNextToken();
                 if (scanner.getToken().getTokenType() == TokenType::tok_integer) {
-                    Type = (int)TokenType::tok_integer;
+                    Type = TokenType::tok_integer;
                     scanner.getNextToken();
                 }
                 if (scanner.getToken().getTokenType() == TokenType::tok_float) {
-                    Type = (int)TokenType::tok_float;
+                    Type = TokenType::tok_float;
                     scanner.getNextToken();
                 }
             }
 
+            //获取地址
+            TokenLocation location = scanner.getToken().getTokenLocation();
+
             if (scanner.getToken().getTokenValue() != TokenValue::LEFT_PAREN) // Simple variable ref.
-                return std::make_unique<VariableExprAST>(IdName, Type, true);
+                return std::make_unique<VariableExprAST>(location,IdName, Type);
 
 
 
@@ -99,8 +106,10 @@ namespace llvmRustCompiler {
 
             // Eat the ')'.
             scanner.getNextToken();
-
-            return std::make_unique<CallExprAST>(IdName, std::move(Args));
+            
+            //获取location
+            TokenLocation location = scanner.getToken().getTokenLocation();
+            return std::make_unique<CallExprAST>(location,IdName, std::move(Args));
         }
 
 
@@ -167,9 +176,9 @@ namespace llvmRustCompiler {
 
             scanner.getNextToken(); //吃掉右大括号
 
+            TokenLocation location = scanner.getToken().getTokenLocation();
 
-
-            return std::make_unique<IfExprAST>(std::move(Cond), std::move(If),
+            return std::make_unique<IfExprAST>(location,std::move(Cond), std::move(If),
                 std::move(Else));
         }
 
@@ -229,7 +238,8 @@ namespace llvmRustCompiler {
 
             scanner.getNextToken(); //吃掉右大括号
 
-            return std::make_unique<ForExprAST>(IdName, std::move(Start), std::move(End),
+            TokenLocation location = scanner.getToken().getTokenLocation();
+            return std::make_unique<ForExprAST>(location,IdName, std::move(Start), std::move(End),
                 std::move(Step), std::move(Body));
         }
 
@@ -249,7 +259,7 @@ namespace llvmRustCompiler {
 
             case TokenType::tok_float:
             case TokenType::tok_integer:
-                return ParseNumberExpr();
+                return ParseFPNumberExpr();
             default:
                 //小层for循环处理 let ( if for
                 switch (scanner.getToken().getTokenValue())
@@ -303,8 +313,10 @@ namespace llvmRustCompiler {
                 }
 
                 // Merge LHS/RHS.
+                //获取地址
+                TokenLocation location = scanner.getToken().getTokenLocation();
                 LHS =
-                    std::make_unique<BinaryExprAST>(BinOp, std::move(LHS), std::move(RHS));
+                    std::make_unique<BinaryExprAST>(location,BinOp, std::move(LHS), std::move(RHS));
             }
         }
 
@@ -338,11 +350,18 @@ namespace llvmRustCompiler {
             scanner.getNextToken(); //吃掉(
 
 
-            std::vector<std::unique_ptr<ExprAST>> ArgNames;
+            //std::vector<std::unique_ptr<ExprAST>> ArgNames;
+            
+            //参数容器
+            std::vector<std::pair<TokenType, std::string>> ArgNames;
 
             //添加参数
 
             while (scanner.getToken().getTokenValue() != TokenValue::RIGHT_PAREN) {
+
+                //获取一个参数
+                std::unique_ptr<ExprAST> E = ParseIdentifierExpr();
+                
                 ArgNames.push_back(std::move(ParseIdentifierExpr()));
                 if (scanner.getToken().getTokenValue() == TokenValue::RIGHT_PAREN)
                     break;

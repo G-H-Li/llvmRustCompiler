@@ -38,6 +38,8 @@ namespace llvmRustCompiler
         virtual raw_ostream& dump(raw_ostream& out, int ind) {
             return out << ':' << Loc.getLine() << ':' << Loc.getCol() << '\n';
         }
+
+        //获取必要的值
     };
 
     /// 浮点数字,
@@ -78,6 +80,9 @@ namespace llvmRustCompiler
         raw_ostream& dump(raw_ostream& out, int ind) override {
             return ExprAST::dump(out << Name, ind);
         }
+
+        std::string& getName() { return Name; }
+        TokenType getType() { return Type; }
         Value* codegen() override;
     };
 
@@ -135,19 +140,30 @@ namespace llvmRustCompiler
     };
 
     /// 判断表达式（if，else if ， else）
+    /// if体和else体得包含多条语句，改成std::vector<std::unique_ptr<ExprAST>>
     class IfExprAST : public ExprAST {
-        std::unique_ptr<ExprAST> Cond, Then, Else;
-
+        std::unique_ptr<ExprAST> Cond;
+        std::vector<std::unique_ptr<ExprAST>> If;
+        std::vector<std::unique_ptr<ExprAST>> Else;
     public:
-        IfExprAST(TokenLocation Loc, std::unique_ptr<ExprAST> Cond,
-            std::unique_ptr<ExprAST> Then, std::unique_ptr<ExprAST> Else)
-            : ExprAST(Loc), Cond(std::move(Cond)),Then(std::move(Then)),
+        IfExprAST(TokenLocation Loc, 
+            std::unique_ptr<ExprAST> Cond,
+            std::vector<std::unique_ptr<ExprAST>> If, 
+            std::vector<std::unique_ptr<ExprAST>> Else)
+            : ExprAST(Loc), Cond(std::move(Cond)),If(std::move(If)),
             Else(std::move(Else)) {}
         raw_ostream& dump(raw_ostream& out, int ind) override {
             ExprAST::dump(out << "if", ind);
             Cond->dump(indent(out, ind) << "Cond:", ind + 1);
-            Then->dump(indent(out, ind) << "Then:", ind + 1);
-            Else->dump(indent(out, ind) << "Else:", ind + 1);
+            
+            //因为变成了多条语句，因此加for循环遍历
+            for (int i = 0; i < If.size(); i++) {
+                If.at(i)->dump(indent(out, ind) << "Then:", ind + 1);
+            }
+
+            for (int i = 0; i < If.size(); i++) {
+                If.at(i)->dump(indent(out, ind) << "Then:", ind + 1);
+            }
             return out;
         }
 
@@ -155,15 +171,26 @@ namespace llvmRustCompiler
     };
 
     /// For循环 - Expression class for for/in.
+    /// For函数体包含多条语句。改成std::vector<std::unique_ptr<ExprAST>> 
+    /// 只支持 for i in 0..100 { body }
+    /// Varname : i  
+    /// start: 0; 
+    ///  .. 词法分析不要把点当成小数点返回数字
+    /// end: 100  万花筒5里面end是i<n的不等于形式而这里是一个整数形式，代码生成注意差别
+    /// Step默认为空，代码生成时默认设置为1
     class ForExprAST : public ExprAST {
         std::string VarName;
-        std::unique_ptr<ExprAST> Start, End, Step, Body;
-
+        std::unique_ptr<ExprAST> Start, End, Step;
+        std::vector<std::unique_ptr<ExprAST>> Body;
     public:
-        ForExprAST(TokenLocation Loc, const std::string& VarName, std::unique_ptr<ExprAST> Start,
-            std::unique_ptr<ExprAST> End, std::unique_ptr<ExprAST> Step,
-            std::unique_ptr<ExprAST> Body)
-            : ExprAST(Loc), VarName(VarName), Start(std::move(Start)), End(std::move(End)),
+        ForExprAST(TokenLocation Loc,
+            const std::string& VarName,
+            std::unique_ptr<ExprAST> Start,
+            std::unique_ptr<ExprAST> End,
+            std::unique_ptr<ExprAST> Step,
+            std::vector<std::unique_ptr<ExprAST>> Body)
+            : ExprAST(Loc), VarName(VarName),
+            Start(std::move(Start)), End(std::move(End)),
             Step(std::move(Step)), Body(std::move(Body)) {}
         
         raw_ostream& dump(raw_ostream& out, int ind) override {
@@ -171,7 +198,11 @@ namespace llvmRustCompiler
             Start->dump(indent(out, ind) << "Cond:", ind + 1);
             End->dump(indent(out, ind) << "End:", ind + 1);
             Step->dump(indent(out, ind) << "Step:", ind + 1);
-            Body->dump(indent(out, ind) << "Body:", ind + 1);
+            //因为变成了多条语句，因此加for循环遍历
+            for (int i = 0; i < Body.size(); i++) {
+                Body.at(i)->dump(indent(out, ind) << "Then:", ind + 1);
+            }
+            
             return out;
         }
         Value* codegen() override;
