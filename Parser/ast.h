@@ -17,6 +17,18 @@
 #include <string>
 #include <map>
 
+//语法分析连接lexer要用这串include才跑得起来。注释在这不要删除
+//#include "../Lexer/token.h"
+//#include <cctype>
+//#include <cstdio>
+//#include <cstdlib>
+//#include <string>
+//#include <map>
+//#include <algorithm>
+//#include <cassert>
+//#include <memory>
+//#include <vector>
+
 using namespace llvm;
 
 namespace llvmRustCompiler
@@ -77,12 +89,13 @@ namespace llvmRustCompiler
         VariableExprAST(TokenLocation Loc, const std::string& Name, TokenType Type)
             : ExprAST(Loc), Name(Name), Type(Type) {}
         const std::string& getName() const { return Name; }
-        raw_ostream& dump(raw_ostream& out, int ind) override {
-            return ExprAST::dump(out << Name, ind);
-        }
 
         std::string& getName() { return Name; }
         TokenType getType() { return Type; }
+        
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            return ExprAST::dump(out << Name, ind);
+        }
         Value* codegen() override;
     };
 
@@ -208,18 +221,24 @@ namespace llvmRustCompiler
     };
 
     // while循环
+    // 修改Body为多条语句。定义改为 
     class WhileExprAST : public ExprAST {
-        std::unique_ptr<ExprAST> End, Body;
+        std::unique_ptr<ExprAST> End;
+        std::vector<std::unique_ptr<ExprAST>> Body;
 
     public:
         WhileExprAST(TokenLocation Loc, std::unique_ptr<ExprAST> End, std::unique_ptr<ExprAST> Step,
-            std::unique_ptr<ExprAST> Body)
+            std::vector<std::unique_ptr<ExprAST>> Body)
             : ExprAST(Loc), End(std::move(End)),Body(std::move(Body)) {}
 
         raw_ostream& dump(raw_ostream& out, int ind) override {
             ExprAST::dump(out << "while", ind);
             End->dump(indent(out, ind) << "End:", ind + 1);
-            Body->dump(indent(out, ind) << "Body:", ind + 1);
+            
+            //因为变成了多条语句，因此加for循环遍历
+            for (int i = 0; i < Body.size(); i++) {
+                Body.at(i)->dump(indent(out, ind) << "Then:", ind + 1);
+            }
             return out;
         }
         Value* codegen() override;
