@@ -69,7 +69,12 @@ namespace llvmRustCompiler {
         if (scanner.getToken().getTokenValue() == TokenValue::COLON) //判断是否等于冒号 :
         {
             scanner.getNextToken(); token = scanner.getToken();
+            //判断整数和浮点数
             if (scanner.getToken().getTokenValue() == TokenValue::KW_I32) {
+                Type = TokenType::tok_integer;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_I64) {
                 Type = TokenType::tok_integer;
                 scanner.getNextToken(); token = scanner.getToken();
             }
@@ -77,6 +82,28 @@ namespace llvmRustCompiler {
                 Type = TokenType::tok_float;
                 scanner.getNextToken(); token = scanner.getToken();
             }
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_F64) {
+                Type = TokenType::tok_float;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            
+            //判断布尔值
+            if (scanner.getToken().getTokenName()._Equal("bool")) {
+                Type = TokenType::tok_bool;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            
+            //判断char
+            if (scanner.getToken().getTokenName()._Equal("char")) {
+                Type = TokenType::tok_char;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            //判断string
+            if (scanner.getToken().getTokenName()._Equal("string")) {
+                Type = TokenType::tok_string;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            
         }
 
         //获取变量地址
@@ -381,13 +408,40 @@ namespace llvmRustCompiler {
         TokenType Type = TokenType::tok_float;//首先默认是浮点数型
         if (scanner.getToken().getTokenValue() == TokenValue::COLON) //判断是否等于冒号 :
         {
-            scanner.getNextToken(); token = scanner.getToken();
+            
+            scanner.getNextToken(); token = scanner.getToken();//吃掉冒号 :
+            //判断整数和浮点数
             if (scanner.getToken().getTokenValue() == TokenValue::KW_I32) {
+                Type = TokenType::tok_integer;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_I64) {
                 Type = TokenType::tok_integer;
                 scanner.getNextToken(); token = scanner.getToken();
             }
             if (scanner.getToken().getTokenValue() == TokenValue::KW_F32) {
                 Type = TokenType::tok_float;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_F64) {
+                Type = TokenType::tok_float;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+
+            //判断布尔值
+            if (scanner.getToken().getTokenName()._Equal("bool")) {
+                Type = TokenType::tok_bool;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+
+            //判断char
+            if (scanner.getToken().getTokenName()._Equal("char")) {
+                Type = TokenType::tok_char;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            //判断string
+            if (scanner.getToken().getTokenName()._Equal("string")) {
+                Type = TokenType::tok_string;
                 scanner.getNextToken(); token = scanner.getToken();
             }
         }
@@ -469,15 +523,40 @@ namespace llvmRustCompiler {
         if (scanner.getToken().getTokenValue() == TokenValue::POINTER)
         {
             scanner.getNextToken(); token = scanner.getToken(); //吃掉 ->
-            if (scanner.getToken().getTokenValue() == TokenValue::KW_I32)
-            {
+
+            //判断整数和浮点数
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_I32) {
                 return_type = TokenType::tok_integer;
-                scanner.getNextToken(); token = scanner.getToken(); //吃掉类型
+                scanner.getNextToken(); token = scanner.getToken();
             }
-            if (scanner.getToken().getTokenValue() == TokenValue::KW_F32)
-            {
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_I64) {
+                return_type = TokenType::tok_integer;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_F32) {
                 return_type = TokenType::tok_float;
-                scanner.getNextToken(); token = scanner.getToken(); //吃掉类型
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_F64) {
+                return_type = TokenType::tok_float;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+
+            //判断布尔值
+            if (scanner.getToken().getTokenName()._Equal("bool")) {
+                return_type = TokenType::tok_bool;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+
+            //判断char
+            if (scanner.getToken().getTokenName()._Equal("char")) {
+                return_type = TokenType::tok_char;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            //判断string
+            if (scanner.getToken().getTokenName()._Equal("string")) {
+                return_type = TokenType::tok_string;
+                scanner.getNextToken(); token = scanner.getToken();
             }
         }
 
