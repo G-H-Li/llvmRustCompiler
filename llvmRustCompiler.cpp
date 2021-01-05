@@ -39,14 +39,15 @@ namespace llvmRustCompiler {
 
     }
 
-//语法分析器测试
-void parserTest()
-{
-    
-}
+    //生成器测试
+    void generatorTest()
+    {
 
-int main()
-{
-    
-    return 0;
+    }
+
+    int main()
+    {
+
+        return 0;
+    }
 }
