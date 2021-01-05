@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Author: 李国豪
 * Date:2021/1/3
 * description:抽象语法树定义
@@ -403,11 +403,11 @@ namespace llvmRustCompiler {
 
 	// rust的for循环并不好实现，建议实现while循环
 	Value* ForExprAST::codegen() {
-
+		return nullptr;
 	}
 
 	Value* WhileExprAST::codegen() {
-
+		return nullptr;
 	}
 
 	Value* VarExprAST::codegen() {

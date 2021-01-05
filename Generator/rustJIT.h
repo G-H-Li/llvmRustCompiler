@@ -27,6 +27,9 @@
 #include <string>
 #include <vector>
 
+using namespace llvm;
+using namespace llvm::orc;
+
 namespace llvmRustCompiler 
 {
 class RustJIT {

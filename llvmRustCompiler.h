@@ -4,8 +4,9 @@
 #pragma once
 
 #include "Lexer/scanner.h"
+#include "Lexer/token.h"
 #include "Generator/rustJIT.h"
 #include "Parser/ast.h"
-#include "Parser/parser.h"
+
 #include "constant.h"
 #include <iostream>
