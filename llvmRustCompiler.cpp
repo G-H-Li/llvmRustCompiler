@@ -7,7 +7,9 @@ using namespace std;
 // 词法分析器测试
 void lexerTest()
 {
-    string fileAddress = "D:\\CodeFile\\lexerTest.txt";
+       
+    //string fileAddress = "D:\\CodeFile\\lexerTest.txt";
+    string fileAddress = "C:\\Users\\izumi\\Desktop\\code.txt";
     llvmRustCompiler::Scanner scanner(fileAddress);
     if (scanner.getFileAvailable())
     {
@@ -33,11 +35,15 @@ void lexerTest()
 //语法分析器测试
 void parserTest()
 {
-    
+    string fileAddress = "C:\\Users\\izumi\\Desktop\\code.txt";
+    llvmRustCompiler::Scanner scanner(fileAddress);
+
+    llvmRustCompiler::Parser parser(scanner);
+    parser.main();
 }
 
 int main()
 {
-    
+    //parserTest();
     return 0;
 }
