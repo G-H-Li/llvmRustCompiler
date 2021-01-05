@@ -15,12 +15,12 @@ namespace llvmRustCompiler {
 	class Parser
 	{
 	public:
-		Parser(Scanner _scanner) : scanner(_scanner) {};
+		Parser(Scanner& _scanner) : scanner(_scanner) {};
 		Parser();
 		~Parser();
 
 	private:
-		Scanner scanner;
+		Scanner& scanner;
 
 
 	private:
