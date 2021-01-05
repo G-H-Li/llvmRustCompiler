@@ -71,6 +71,7 @@ namespace llvmRustCompiler
         addToken(".", std::make_tuple(TokenValue::PERIOD, TokenType::tok_delimiter, -1));
         addToken(":", std::make_tuple(TokenValue::COLON, TokenType::tok_delimiter, -1));
         addToken(";", std::make_tuple(TokenValue::SEMICOLON, TokenType::tok_delimiter, -1));
+        addToken("..", std::make_tuple(TokenValue::TRAVERSE, TokenType::tok_delimiter, -1));
 
         addToken("+", std::make_tuple(TokenValue::PLUS, TokenType::tok_operators, 10));
         addToken("-", std::make_tuple(TokenValue::MINUS, TokenType::tok_operators, 10));
