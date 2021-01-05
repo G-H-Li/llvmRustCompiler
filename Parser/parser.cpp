@@ -235,6 +235,43 @@ namespace llvmRustCompiler {
             std::move(Step), std::move(Body));
     }
 
+
+
+    // 此while仅能解析如下示例
+    // while number < 4 { 语句1; 语句2;}
+    std::unique_ptr<ExprAST> Parser::ParseWhileExpr() {
+        if (scanner.getToken().getTokenValue() != TokenValue::KW_WHILE) {
+            errorParser(" expected while keyword");
+            return nullptr;
+        }
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉while
+
+        //直接解析终止条件 End
+        auto End = ParseExpression();
+        if (!End) {
+            errorParser("no end conditon");
+            return nullptr;
+        }
+
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉左大括号 {
+
+        //创建一个Body容器
+        std::vector<std::unique_ptr<ExprAST>> Body;
+
+        while (scanner.getToken().getTokenValue() != TokenValue::RIGHT_BRACE) {
+            Body.push_back(std::move(ParseExpression()));
+            scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
+        }
+
+        scanner.getNextToken(); token = scanner.getToken(); //吃掉右大括号
+
+        TokenLocation location = scanner.getToken().getTokenLocation();
+        return std::make_unique<WhileExprAST>(location, std::move(End), std::move(Body));
+
+    }
+
+
+
     /// primary
     ///   ::= identifierexpr
     ///   ::= numberexpr
@@ -265,6 +302,8 @@ namespace llvmRustCompiler {
                 return ParseIfExpr();
             case TokenValue::KW_FOR:
                 return ParseForExpr();
+            case TokenValue::KW_WHILE:
+                return ParseWhileExpr();
             default:
                 errorParser("unknown token when expecting an expression");
                 return nullptr;

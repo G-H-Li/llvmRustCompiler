@@ -227,9 +227,9 @@ namespace llvmRustCompiler
         std::vector<std::unique_ptr<ExprAST>> Body;
 
     public:
-        WhileExprAST(TokenLocation Loc, std::unique_ptr<ExprAST> End, std::unique_ptr<ExprAST> Step,
+        WhileExprAST(TokenLocation Loc, std::unique_ptr<ExprAST> End,
             std::vector<std::unique_ptr<ExprAST>> Body)
-            : ExprAST(Loc), End(std::move(End)),Body(std::move(Body)) {}
+            : ExprAST(Loc), End(std::move(End)), Body(std::move(Body)) {}
 
         raw_ostream& dump(raw_ostream& out, int ind) override {
             ExprAST::dump(out << "while", ind);
