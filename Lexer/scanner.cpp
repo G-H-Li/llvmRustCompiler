@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <cctype>
 #include "scanner.h"
-#include "..\Error\error.h"
+#include "../Error/error.h"
 
 namespace llvmRustCompiler
 {
@@ -102,59 +102,7 @@ namespace llvmRustCompiler
             {
                 getNextChar();
             }
-            handleLineComment();
-            handleBlockComment();
         } while (std::isspace(currentChar_));
-    }
-
-    void Scanner::handleLineComment()
-    {
-        loc_ = getTokenLocation();
-        //当前为( 向前看为*
-        if (currentChar_ == '(' && peekChar() == '*')
-        {
-            //eat ( *
-            getNextChar();
-            getNextChar();
-            while (!(currentChar_ == '*' && peekChar() == ')'))
-            {
-                getNextChar();
-                //意外结尾
-                if (input_.eof())
-                {
-                    errorReport(std::string("你本来应该以 *) 结束，怎么会扫描到: ") + currentChar_);
-                    break;
-                }
-            }
-            if (!input_.eof())
-            {
-                //eat * )
-                getNextChar();
-                getNextChar();
-            }
-        }
-    }
-
-    void Scanner::handleBlockComment()
-    {
-        loc_ = getTokenLocation();
-        if (currentChar_ == '{')
-        {
-            do
-            {
-                getNextChar();
-                if (input_.eof())
-                {
-                    errorReport(std::string("你本来应该以 } 结束，怎么会扫描到: ") + currentChar_);
-                    break;
-                }
-            } while (currentChar_ != '}');
-
-            if (!input_.eof())
-            {
-                getNextChar();
-            }
-        }
     }
 
     Token Scanner::getNextToken()
@@ -244,6 +192,13 @@ namespace llvmRustCompiler
         isFileAvailable_ = false;
     }
 
+    /*处理以数字开头
+    *一个./e/E        浮点数
+    *连续的两个.  数字 + ..
+    * 其他情况的两个及以上.  非法标识符
+    *两个及以上e/E  非法标识符
+    * 10进制出现字母  非法标识符
+    */
     void Scanner::handleNumberState()
     {
         loc_ = getTokenLocation();
@@ -260,16 +215,31 @@ namespace llvmRustCompiler
         };
         NumberState numberState = NumberState::INTERGER;
 
-        if (currentChar_ == '0')//考虑16进制
+        if (currentChar_ == '0')//以0开头的情况
         {
-            addToBuffer(currentChar_);
+            /*
+            *考虑16进制,不考虑是科学计数法
+            */
+            addToBuffer(currentChar_);//eat 0
             getNextChar();
             if (currentChar_ == 'x') {
                 numberBase = 16;
                 addToBuffer(currentChar_);
                 getNextChar();
             }
-            else if (std::isalpha(currentChar_)) {
+            else if (std::isdigit(currentChar_)) {
+                numberState = NumberState::INTERGER;
+            }
+            else if (currentChar_ == '.') {
+                //可以是小数，不能是科学计数法的小数部分
+                if (peekChar() == '.') {
+                    makeToken(TokenType::tok_integer, TokenValue::KW_UNRESERVED, loc_,
+                        std::stol(buffer_, 0, 10), buffer_);
+                    return;
+                }
+                numberState = NumberState::FRACTION;
+            }
+            else {
                 numberState = NumberState::WRONG;
             }
         }
@@ -327,7 +297,12 @@ namespace llvmRustCompiler
                 {
                     errorReport("16进制数不能有 .");
                 }
-
+                //除此之外，即处理该数字时仅有整数部分
+                if (peekChar() == '.') {
+                    //又出现了一个. 考虑..，不在数字范畴
+                    numberState = NumberState::DONE;
+                    break;
+                }
                 numberState = NumberState::FRACTION;
             }
             else if (currentChar_ == 'E' || currentChar_ == 'e')
@@ -338,7 +313,7 @@ namespace llvmRustCompiler
                 }
                 numberState = NumberState::EXPONENT;
             }
-            else if(std::isalpha(currentChar_))
+            else if (std::isalpha(currentChar_))
             {
                 numberState = NumberState::WRONG;
                 break;
@@ -492,12 +467,8 @@ namespace llvmRustCompiler
 
     void Scanner::handleFraction()
     {
-        if (!std::isdigit(peekChar()))
-        {
-            errorReport("浮点数尾数部分应该为数字");
-        }
 
-        addToBuffer(currentChar_);
+        addToBuffer(currentChar_);//eat .
         getNextChar();
 
         while (std::isdigit(currentChar_))
@@ -530,10 +501,10 @@ namespace llvmRustCompiler
         }
     }
 
-    void Scanner::handleWrongState() 
+    void Scanner::handleWrongState()
     {
         errorReport("非法的标识符或数字:");
-        do 
+        do
         {
             addToBuffer(currentChar_);
             getNextChar();
