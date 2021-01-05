@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Author: 李国豪
 * Date:2021/1/3
 * description:抽象语法树定义
@@ -347,30 +347,40 @@ namespace llvmRustCompiler {
 
 		// Create blocks for the then and else cases.  Insert the 'then' block at the
 		// end of the function.
-		BasicBlock* ThenBB = BasicBlock::Create(TheContext, "then", TheFunction);
+		BasicBlock* IfBB = BasicBlock::Create(TheContext, "if", TheFunction);
 		BasicBlock* ElseBB = BasicBlock::Create(TheContext, "else");
 		BasicBlock* MergeBB = BasicBlock::Create(TheContext, "ifcont");
 
-		Builder.CreateCondBr(CondV, ThenBB, ElseBB);
+		Builder.CreateCondBr(CondV, IfBB, ElseBB);
 
 		// Emit then value.
-		Builder.SetInsertPoint(ThenBB);
+		Builder.SetInsertPoint(IfBB);
 
-		Value* ThenV = Then->codegen();
-		if (!ThenV)
-			return nullptr;
+		std::vector<Value*> IfVs(If.size());
+		for (auto& expr : If) {
+			Value* IfV = expr->codegen();
+			if (!IfV) {
+				return nullptr;
+			}
+			IfVs.push_back(IfV);
+		}
 
 		Builder.CreateBr(MergeBB);
 		// Codegen of 'Then' can change the current block, update ThenBB for the PHI.
-		ThenBB = Builder.GetInsertBlock();
+		IfBB = Builder.GetInsertBlock();
 
 		// Emit else block.
 		TheFunction->getBasicBlockList().push_back(ElseBB);
 		Builder.SetInsertPoint(ElseBB);
 
-		Value* ElseV = Else->codegen();
-		if (!ElseV)
-			return nullptr;
+		std::vector<Value*> ElseVs(Else.size());
+		for (auto& expr : Else) {
+			Value* ElseV = expr->codegen();
+			if (!ElseV) {
+				return nullptr;
+			}
+			ElseVs.push_back(ElseV);
+		}
 
 		Builder.CreateBr(MergeBB);
 		// Codegen of 'Else' can change the current block, update ElseBB for the PHI.
@@ -379,16 +389,25 @@ namespace llvmRustCompiler {
 		// Emit merge block.
 		TheFunction->getBasicBlockList().push_back(MergeBB);
 		Builder.SetInsertPoint(MergeBB);
+		//此处可能存在问题
 		PHINode* PN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "iftmp");
 
-		PN->addIncoming(ThenV, ThenBB);
-		PN->addIncoming(ElseV, ElseBB);
+		for (auto& IfV : IfVs) {
+			PN->addIncoming(IfV, IfBB);
+		}
+		for (auto& ElseV : ElseVs) {
+			PN->addIncoming(ElseV, ElseBB);
+		}
 		return PN;
 	}
 
 	// rust的for循环并不好实现，建议实现while循环
 	Value* ForExprAST::codegen() {
-		return nullptr;
+
+	}
+
+	Value* WhileExprAST::codegen() {
+
 	}
 
 	Value* VarExprAST::codegen() {
@@ -495,8 +514,12 @@ namespace llvmRustCompiler {
 			// Add arguments to variable symbol table.
 			NamedValues[std::string(Arg.getName())] = Alloca;
 		}
-			
-		if (Value* RetVal = Body->codegen()) {
+		std::vector<Value*> BodyVals;
+		for (auto& expr : Body) {
+			Value* fnVal = expr->codegen();
+			BodyVals.push_back(fnVal);
+		}
+		if (Value* RetVal = BodyVals.back()) {
 			// Finish off the function.
 			Builder.CreateRet(RetVal);
 

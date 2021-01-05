@@ -155,14 +155,13 @@ namespace llvmRustCompiler
         raw_ostream& dump(raw_ostream& out, int ind) override {
             ExprAST::dump(out << "if", ind);
             Cond->dump(indent(out, ind) << "Cond:", ind + 1);
-            
             //因为变成了多条语句，因此加for循环遍历
             for (int i = 0; i < If.size(); i++) {
-                If.at(i)->dump(indent(out, ind) << "Then:", ind + 1);
+                If.at(i)->dump(indent(out, ind) << "If:", ind + 1);
             }
 
-            for (int i = 0; i < If.size(); i++) {
-                If.at(i)->dump(indent(out, ind) << "Then:", ind + 1);
+            for (int i = 0; i < Else.size(); i++) {
+                Else.at(i)->dump(indent(out, ind) << "Else:", ind + 1);
             }
             return out;
         }
@@ -208,8 +207,22 @@ namespace llvmRustCompiler
         Value* codegen() override;
     };
 
-    // TODO while循环
+    // while循环
     class WhileExprAST : public ExprAST {
+        std::unique_ptr<ExprAST> End, Body;
+
+    public:
+        WhileExprAST(TokenLocation Loc, std::unique_ptr<ExprAST> End, std::unique_ptr<ExprAST> Step,
+            std::unique_ptr<ExprAST> Body)
+            : ExprAST(Loc), End(std::move(End)),Body(std::move(Body)) {}
+
+        raw_ostream& dump(raw_ostream& out, int ind) override {
+            ExprAST::dump(out << "while", ind);
+            End->dump(indent(out, ind) << "End:", ind + 1);
+            Body->dump(indent(out, ind) << "Body:", ind + 1);
+            return out;
+        }
+        Value* codegen() override;
     };
     // TODO loop循环
     class LoopExprAST : public ExprAST {
