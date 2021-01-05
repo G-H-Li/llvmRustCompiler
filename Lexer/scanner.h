@@ -48,9 +48,7 @@ namespace llvmRustCompiler
 
         //∂¡»°µ•¥ –Ú¡–
         void            preprocess();
-        void            handleLineComment();
-        void            handleBlockComment();
-
+        
         TokenLocation   getTokenLocation() const;
 
         void            handleEOFState();
