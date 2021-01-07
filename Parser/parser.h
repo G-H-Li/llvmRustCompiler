@@ -24,7 +24,7 @@ namespace llvmRustCompiler {
 		Scanner& scanner;
 		Token token;
 
-	private:
+	public:
 		std::unique_ptr<ExprAST> ParseExpression();
 		std::unique_ptr<ExprAST> ParseFPNumberExpr();
 		std::unique_ptr<ExprAST> ParseIntNumberExpr();
@@ -41,6 +41,7 @@ namespace llvmRustCompiler {
 		std::unique_ptr<PrototypeAST> ParsePrototype();
 		std::unique_ptr<FunctionAST> ParseDefinition();
 		std::unique_ptr<FunctionAST> ParseTopLevelExpr();
+		Scanner& getScanner();
 
 
 	private:

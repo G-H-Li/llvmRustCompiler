@@ -601,6 +601,11 @@ namespace llvmRustCompiler {
         return nullptr;
     }
 
+    Scanner& Parser::getScanner()
+    {
+        return scanner;
+    }
+
     void Parser::HandleDefinition() {
         if (ParseDefinition()) {
             fprintf(stderr, "Read function definition: \n");

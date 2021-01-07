@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "Error/error.h"
 #include "Lexer/scanner.h"
 #include "Lexer/token.h"
 #include "Generator/rustJIT.h"

@@ -33,7 +33,11 @@ llvm_map_components_to_libnames(llvm_libs
     Core
     MC
     OrcJIT
-    irreader)
+    X86Disassembler
+    X86AsmParser
+    X86CodeGen
+    X86Info
+    )
 
 # 添加子目录
 add_subdirectory(Lexer)
