@@ -139,18 +139,86 @@ namespace llvmRustCompiler {
         scanner.getNextToken(); token = scanner.getToken(); //吃掉let
 
         //判断有无 mut 确定是否是常量
+        //此处判断mut无实际作用，无论有无mut的返回值都是一样的。就是让语法能好看点写成"let mut x = 3"
         bool isConst = false;
         if (scanner.getToken().getTokenValue() == TokenValue::KW_MUT)
         {
             isConst = true;
-            scanner.getNextToken(); token = scanner.getToken();
+            scanner.getNextToken(); token = scanner.getToken();//吃掉mut
         }
 
+        //创建一个存放变量信息的容器
+        std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>> VarNames;
+
+        //判断有无变量名
         if (scanner.getToken().getTokenType() != TokenType::tok_identifier)
             return nullptr;
-        if (auto E = ParseIdentifierExpr())
-            return E;
-        return nullptr;
+
+        std::string Name = scanner.getToken().getTokenName();//为函数变量名赋值
+
+        scanner.getNextToken(); token = scanner.getToken();//吃掉变量名
+
+        //设置默认类型是整数
+        TokenType Type = TokenType::tok_integer;
+        if (scanner.getToken().getTokenValue() == TokenValue::COLON)//如果等于冒号
+        {
+            scanner.getNextToken(); token = scanner.getToken(); // 吃掉冒号
+
+            //判断整数和浮点数
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_I32) {
+                Type = TokenType::tok_integer;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_I64) {
+                Type = TokenType::tok_integer;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_F32) {
+                Type = TokenType::tok_float;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_F64) {
+                Type = TokenType::tok_float;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+
+            //判断布尔值
+            if (scanner.getToken().getTokenName()._Equal("bool")) {
+                Type = TokenType::tok_bool;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+
+            //判断char
+            if (scanner.getToken().getTokenName()._Equal("char")) {
+                Type = TokenType::tok_char;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+            //判断string
+            if (scanner.getToken().getTokenName()._Equal("string")) {
+                Type = TokenType::tok_string;
+                scanner.getNextToken(); token = scanner.getToken();
+            }
+        }
+
+        // Read the optional initializer.
+        std::unique_ptr<ExprAST> Init;
+        if (scanner.getToken().getTokenValue() == TokenValue::EQUAL) {
+            scanner.getNextToken(); token = scanner.getToken(); // 吃掉等号
+            Init = ParseExpression();
+            if (!Init) return nullptr;
+        }
+        else {
+            errorParser("expected '=' but not found");
+            return nullptr;
+        }
+
+        //存入变量名以及变量的初始化表达式信息
+        VarNames.push_back(std::make_pair(Name, std::move(Init)));
+
+        //获取地址location
+        TokenLocation Location = scanner.getToken().getTokenLocation();
+        //返回结点值
+        return std::make_unique<VarExprAST>(Location, std::move(VarNames), Type);
     }
 
 
