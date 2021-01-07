@@ -5,50 +5,49 @@
 using namespace llvmRustCompiler;
 using namespace std;
 
-namespace llvmRustCompiler {
 
-    // 词法分析器测试
-    void lexerTest()
+// 词法分析器测试
+void lexerTest()
+{
+    string fileAddress = "D:\\CodeFile\\lexerTest.txt";
+    Scanner scanner(fileAddress);
+    if (scanner.getFileAvailable())
     {
-        string fileAddress = "D:\\CodeFile\\lexerTest.txt";
-        Scanner scanner(fileAddress);
-        if (scanner.getFileAvailable())
-        {
-            scanner.getNextToken();//开始扫描
+        scanner.getNextToken();//开始扫描
 
-            while (scanner.getToken().getTokenType() != llvmRustCompiler::TokenType::tok_eof)
+        while (scanner.getToken().getTokenType() != llvmRustCompiler::TokenType::tok_eof)
+        {
+            scanner.getToken().dump();
+            if (scanner.getErrorFlag())
             {
-                scanner.getToken().dump();
-                if (scanner.getErrorFlag())
-                {
-                    //添加当处理到不合法单词时的处理
-                    cout << "刚刚发生了一些小错误" << endl;
-                }
-                scanner.getNextToken();
+                //添加当处理到不合法单词时的处理
+                cout << "刚刚发生了一些小错误" << endl;
             }
-        }
-        else
-        {
-            //添加当文件不可用时的处理
+            scanner.getNextToken();
         }
     }
-
-    //语法分析器测试
-    void parserTest()
+    else
     {
-        string fileAddress = "C:\\Users\\izumi\\Desktop\\code.txt";
-        Scanner scanner(fileAddress);
-
-        Parser parser(scanner);
-        parser.main();
-    }
-
-    //生成器测试
-    void generatorTest()
-    {
-
+        //添加当文件不可用时的处理
     }
 }
+
+//语法分析器测试
+void parserTest()
+{
+    string fileAddress = "C:\\Users\\izumi\\Desktop\\code.txt";
+    Scanner scanner(fileAddress);
+
+    Parser parser(scanner);
+    parser.test();
+}
+
+//生成器测试
+void generatorTest()
+{
+
+}
+
 
 int main()
 {

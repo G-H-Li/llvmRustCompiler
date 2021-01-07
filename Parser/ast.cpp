@@ -7,12 +7,9 @@
 
 #include "ast.h"
 #include "../constant.h"
-#include "../Lexer/token.h"
-#include "../Error/error.h"
-#include "llvm/IR/Type.h"
-#include <llvm\IR\Verifier.h>
 
 namespace llvmRustCompiler {
+
 
 	Function* getFunction(std::string Name) {
 		// 首先看模块中是否添加此函数

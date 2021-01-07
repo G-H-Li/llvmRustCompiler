@@ -1,7 +1,7 @@
 #pragma once
-#include "ast.h"
-#include "..\Lexer\scanner.h"
 
+#include "ast.h"
+#include "../Lexer/scanner.h"
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -11,13 +11,13 @@
 #include <utility>
 #include <vector>
 
+
 namespace llvmRustCompiler {
 	class Parser
 	{
 	public:
 		Parser(Scanner& _scanner) : scanner(_scanner), token(scanner.getToken()) {};
 		Parser();
-		//添加了默认析构函数
 		~Parser() = default;
 
 	private:
@@ -43,18 +43,17 @@ namespace llvmRustCompiler {
 		std::unique_ptr<FunctionAST> ParseTopLevelExpr();
 
 
-
 	private:
-		void HandleDefinition();
-		void HandleTopLevelExpression();
-		/// top ::= definition | external | expression | ';'
-		void MainLoop();
+        void HandleDefinition();
+        void HandleTopLevelExpression();
+        /// top ::= definition | external | expression | ';'
+        void MainLoop();
 
-
-	public:
-		//===----------------------------------------------------------------------===//
-		// Main driver code.
-		//===----------------------------------------------------------------------===//
-		int main();
+    
+    public:
+        //===----------------------------------------------------------------------===//
+        // Main driver code.
+        //===----------------------------------------------------------------------===//
+		int test();
 	};
 }

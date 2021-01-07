@@ -1,16 +1,6 @@
-#include "ast.h"
-#include "..\Lexer\scanner.h"
 #include "..\Error\error.h"
 #include "parser.h"
 
-#include <cctype>
-#include <cstdio>
-#include <cstdlib>
-#include <map>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
 
 namespace llvmRustCompiler {
 
@@ -661,7 +651,7 @@ namespace llvmRustCompiler {
     }
 
 
-    int Parser::main() {
+    int Parser::test() {
 
         // Prime the first token.
         fprintf(stderr, "ready> ");

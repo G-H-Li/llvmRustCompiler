@@ -1,42 +1,35 @@
-#pragma once
 /*
 * Author: 李国豪
 * Date:2021/1/3
 * description:抽象语法树定义
 * latest date:2021/1/4
 */
-
+#pragma once
 
 #include "../Lexer/token.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Value.h"
-#include "llvm/Support/raw_ostream.h"
+#include "../Lexer/token.h"
+#include "../Error/error.h"
+#include "llvm/IR/Type.h"
+#include "llvm/IR/Verifier.h"
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
 #include <string>
 #include <map>
-
-//语法分析连接lexer要用这串include才跑得起来。注释在这不要删除
-//#include "../Lexer/token.h"
-//#include <cctype>
-//#include <cstdio>
-//#include <cstdlib>
-//#include <string>
-//#include <map>
-//#include <algorithm>
-//#include <cassert>
-//#include <memory>
-//#include <vector>
-
+#include <memory>
+#include <vector>
 using namespace llvm;
 
 namespace llvmRustCompiler
 {
-    raw_ostream& indent(raw_ostream& O, int size) {
-        return O << std::string(size, ' ');
+    namespace {
+        raw_ostream& indent(raw_ostream& O, int size) {
+            return O << std::string(size, ' ');
+        }
     }
-
+    
     // 基类
 
     class ExprAST {
