@@ -13,8 +13,8 @@ namespace llvmRustCompiler {
 
 	Function* getFunction(std::string Name) {
 		// 首先看模块中是否添加此函数
-		if (auto* F = TheModule->getFunction(Name))
-			return F;
+		//if (auto* F = TheModule->getFunction(Name))
+			//return F;
 
 		// 寻找合适函数，如果没有找到，则对函数原型进行代码生成
 		auto FI = FunctionProtos.find(Name);

@@ -55,7 +55,7 @@ namespace llvmRustCompiler {
 
 
         // 判断变量类型
-        TokenType Type = TokenType::tok_float;//首先默认是浮点数型
+        TokenType Type = TokenType::tok_integer;//首先默认是浮点数型
         if (scanner.getToken().getTokenValue() == TokenValue::COLON) //判断是否等于冒号 :
         {
             scanner.getNextToken(); token = scanner.getToken();
