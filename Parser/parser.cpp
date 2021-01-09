@@ -477,7 +477,7 @@ namespace llvmRustCompiler {
         scanner.getNextToken(); token = scanner.getToken();//吃掉参数名
 
         // 判断变量类型
-        TokenType Type = TokenType::tok_float;//首先默认是浮点数型
+        TokenType Type = TokenType::tok_integer;//首先默认是浮点数型
         if (scanner.getToken().getTokenValue() == TokenValue::COLON) //判断是否等于冒号 :
         {
             
@@ -591,7 +591,7 @@ namespace llvmRustCompiler {
             return LogErrorP("Expected ')' in prototype");*/
 
             //判断返回类型
-        TokenType return_type = TokenType::tok_float; //默认返回类型是float
+        TokenType return_type = TokenType::tok_integer; //默认返回类型是float
         if (scanner.getToken().getTokenValue() == TokenValue::POINTER)
         {
             scanner.getNextToken(); token = scanner.getToken(); //吃掉 ->
@@ -671,7 +671,7 @@ namespace llvmRustCompiler {
             TokenLocation location = scanner.getToken().getTokenLocation();
             // Make an anonymous proto.
             auto Proto = std::make_unique<PrototypeAST>(location, "__anon_expr",
-                std::vector<std::pair<TokenType, std::string>>(), TokenType::tok_float);
+                std::vector<std::pair<TokenType, std::string>>(), TokenType::tok_integer);
 
             //修改了函数体为数组，因此要添加一个数组创建FunctionAST
 
