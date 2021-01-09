@@ -300,7 +300,7 @@ namespace llvmRustCompiler {
 		}
 
 		// 用户自定义二元操作符
-		Function* F = getFunction(std::string("binary") + Op);
+		Function* F = getFunction(std::string("binary") + (char)Op);
 		assert(F && "binary operator not found!");
 
 		Value* Ops[] = { L, R };
@@ -417,7 +417,7 @@ namespace llvmRustCompiler {
 	Value* VarExprAST::codegen() {
 		std::vector<AllocaInst*> OldBindings;
 
-		//Function* TheFunction = Builder.GetInsertBlock()->getParent();
+		Function* TheFunction = Builder.GetInsertBlock()->getParent();
 
 		// Register all variables and emit their initializer.
 		for (unsigned i = 0, e = VarNames.size(); i != e; ++i) {
@@ -434,18 +434,21 @@ namespace llvmRustCompiler {
 				InitVal = ConstantFP::get(TheContext, APFloat(0.0));
 			}
 
-			AllocaInst* Alloca;
+			//AllocaInst* Alloca;
 			//AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, VarName);
-			switch (Type) {
+			/*switch (Type) {
 			case TokenType::tok_integer:
 				Alloca = Builder.CreateAlloca(Type::getInt32Ty(TheContext), InitVal, "vartmp");
+				break;
 			case TokenType::tok_float:
 				Alloca = Builder.CreateAlloca(Type::getFloatTy(TheContext), InitVal, "vartmp");
+				break;
 			default:
 				errorGenerator(std::string("此数据类型暂时不支持"));
 				return nullptr;
-			}
-			
+			}*/
+
+			AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, VarName);
 			Builder.CreateStore(InitVal, Alloca);
 
 			// Remember the old variable binding so that we can restore the binding when
@@ -456,12 +459,16 @@ namespace llvmRustCompiler {
 			NamedValues[VarName] = Alloca;
 		}
 
+		Value* BodyVal = Body->codegen();
+		if (!BodyVal)
+			return nullptr;
+
 		// Pop all our variables from scope.
 		for (unsigned i = 0, e = VarNames.size(); i != e; ++i)
 			NamedValues[VarNames[i].first] = OldBindings[i];
 
 		// Return the body computation.
-		return nullptr;
+		return BodyVal;
 	}
 
 	Function* PrototypeAST::codegen() {
@@ -538,7 +545,7 @@ namespace llvmRustCompiler {
 			verifyFunction(*TheFunction);
 
 			// Run the optimizer on the function.
-			TheFPM->run(*TheFunction);
+			//TheFPM->run(*TheFunction);
 
 			return TheFunction;
 		}
