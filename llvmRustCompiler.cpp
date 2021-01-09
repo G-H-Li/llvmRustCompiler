@@ -117,17 +117,17 @@ void lexerTest()
     Scanner scanner(fileAddress);
     if (scanner.getFileAvailable())
     {
-        scanner.getNextToken();//开始扫描
-
-        while (scanner.getToken().getTokenType() != llvmRustCompiler::TokenType::tok_eof)
+        while (true)
         {
-            scanner.getToken().dump();
+            scanner.getNextToken();
             if (scanner.getErrorFlag())
             {
                 //添加当处理到不合法单词时的处理
                 cout << "刚刚发生了一些小错误" << endl;
             }
-            scanner.getNextToken();
+            scanner.getToken().dump();
+            if (scanner.getToken().getTokenType() == llvmRustCompiler::TokenType::tok_eof)
+                break;
         }
     }
     else
