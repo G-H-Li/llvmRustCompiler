@@ -2,7 +2,7 @@
 * Author: zqf
 * Date:2021/1/2
 * description:Scanner扫描器，带缓冲区,每次处理一个单词
-* latest date:2021/1/3
+* latest date:2021/1/9
 */
 
 #ifndef SCANNER_H_
@@ -48,12 +48,13 @@ namespace llvmRustCompiler
 
         //读取单词序列
         void            preprocess();
-        
+        void            handleComment();//处理注释
         TokenLocation   getTokenLocation() const;
 
         void            handleEOFState();
         void            handleIdentifierState();
         void            handleNumberState();
+        void            handleCharState();
         void            handleStringState();
         void            handleOperationState();
 
@@ -74,6 +75,7 @@ namespace llvmRustCompiler
             END_OF_FILE,
             IDENTIFIER,
             NUMBER,
+            CHAR,
             STRING,
             OPERATION
         };

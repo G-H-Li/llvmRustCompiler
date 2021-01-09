@@ -2,13 +2,14 @@
 * Author: zqf
 * Date:2021/1/2
 * description:Scanner函数成员的实现
-* latest date:2021/1/5
+* latest date:2021/1/9
 */
 
 #include <algorithm>
 #include <cctype>
 #include "scanner.h"
 #include "../Error/error.h"
+
 
 namespace llvmRustCompiler
 {
@@ -102,7 +103,51 @@ namespace llvmRustCompiler
             {
                 getNextChar();
             }
+            //跳过所有注释
+            handleComment();
         } while (std::isspace(currentChar_));
+    }
+
+    //RUST中的注释:
+    //    // 这是第一种注释方式
+    //    /* 这是第二种注释方式 */
+    //    /*
+    //    * 这是第三种注释方式
+    //    * 这是第三种注释方式
+    //    * 这是第三种注释方式
+    //    * /
+    //    第三种注释可与第二种合并
+    void Scanner::handleComment()
+    {
+        loc_ = getTokenLocation();
+
+        if (currentChar_ == '/' && peekChar() == '/')
+        {
+            std::string lineComment = "";
+            getline(input_, lineComment);//好像没法判断换行符/n只能暂时先这样了，直接吞一行
+            getNextChar();
+        }
+
+        if (currentChar_ == '/' && peekChar() == '*')
+        {
+            getNextChar();
+            getNextChar();
+            while (!(currentChar_ == '*' && peekChar() == '/'))
+            {
+                getNextChar();
+                //缺少 *)
+                if (input_.eof())
+                {
+                    errorReport("未读取到行注释结尾的*/");
+                    return;
+                }
+            }
+            if (!input_.eof())
+            {
+                getNextChar();
+                getNextChar();//eat ‘*/’
+            }
+        }
     }
 
     Token Scanner::getNextToken()
@@ -132,6 +177,10 @@ namespace llvmRustCompiler
 
             case State::NUMBER:
                 handleNumberState();
+                break;
+
+            case State::CHAR:
+                handleCharState();
                 break;
 
             case State::STRING:
@@ -167,8 +216,12 @@ namespace llvmRustCompiler
                     {
                         state_ = State::NUMBER;
                     }
-                    //字符串
                     else if (currentChar_ == '\'')
+                    {
+                        state_ = State::CHAR;
+                    }
+                    //字符串
+                    else if (currentChar_ == '\"')
                     {
                         state_ = State::STRING;
                     }
@@ -351,7 +404,7 @@ namespace llvmRustCompiler
 
     }
 
-    void Scanner::handleStringState()
+    void Scanner::handleCharState()
     {
         loc_ = getTokenLocation();
         getNextChar();
@@ -369,13 +422,15 @@ namespace llvmRustCompiler
                     break;
                 }
             }
-
+            if (input_.eof()) {
+                errorReport("未读取到字符或字符串结尾");
+                break;
+            }
             addToBuffer(currentChar_);
             getNextChar();
         }
 
         getNextChar();
-
         if (buffer_.length() == 1)
         {
             makeToken(TokenType::tok_char, TokenValue::KW_UNRESERVED, loc_,
@@ -386,6 +441,37 @@ namespace llvmRustCompiler
             makeToken(TokenType::tok_string, TokenValue::KW_UNRESERVED,
                 loc_, buffer_, buffer_);
         }
+    }
+
+    void Scanner::handleStringState()
+    {
+        loc_ = getTokenLocation();
+        getNextChar();
+
+        while (true)
+        {
+            if (currentChar_ == '\"')
+            {
+                if (peekChar() == '\"')
+                {
+                    getNextChar();
+                }
+                else
+                {
+                    break;
+                }
+            }
+            if (input_.eof()) {
+                errorReport("未读取到字符串结尾");
+                break;
+            }
+            addToBuffer(currentChar_);
+            getNextChar();
+        }
+
+        getNextChar();
+        makeToken(TokenType::tok_string, TokenValue::KW_UNRESERVED,
+            loc_, buffer_, buffer_);
     }
 
     void Scanner::handleIdentifierState()
