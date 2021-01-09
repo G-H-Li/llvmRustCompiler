@@ -11,24 +11,26 @@ using namespace std;
 LLVMContext TheContext;
 //指令生成的辅助对象，用于跟踪插入指令和生成新指令
 IRBuilder<> Builder(TheContext);
-//皴法代码段中所有函数和全局变量的结构
+//代码段中所有函数和全局变量的结构
 std::unique_ptr<Module> TheModule;
 //记录代码的符号表
 std::map<std::string, AllocaInst*> NamedValues;
 // Pass 管理
-//std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+//ExecutionEngine* TheExcution;
 // JIT
 std::unique_ptr<RustJIT> TheJIT;
 // 函数映射
 std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
 
+static string fileAddress = "C:\\Users\\22152\\Desktop\\test.rs";
 
 void InitializeModuleAndPassManager() {
     // Open a new module.
     TheModule = std::make_unique<Module>("my cool jit", TheContext);
     TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
 
-    /* // Create a new pass manager attached to it.
+     // Create a new pass manager attached to it.
     TheFPM = std::make_unique<legacy::FunctionPassManager>(TheModule.get());
 
     // Do simple "peephole" optimizations and bit-twiddling optzns.
@@ -40,7 +42,7 @@ void InitializeModuleAndPassManager() {
     // Simplify the control flow graph (deleting unreachable blocks, etc).
     TheFPM->add(createCFGSimplificationPass());
 
-    TheFPM->doInitialization();*/
+    TheFPM->doInitialization();
 }
 
 //处理定义函数
@@ -89,7 +91,7 @@ void HandleTopLevelExpression(Parser& parser) {
 /// top ::= definition | external | expression | ';'
 void MainLoop(Parser& parser) {
     while (true) {
-        TheModule->dump();
+        //TheModule->dump();
         switch (parser.getScanner().getToken().getTokenType()) {
         case TokenType::tok_eof:
             return;
@@ -114,7 +116,6 @@ void MainLoop(Parser& parser) {
 // 词法分析器测试
 void lexerTest()
 {
-    string fileAddress = "D:\\CodeFile\\lexerTest.txt";
     Scanner scanner(fileAddress);
     if (scanner.getFileAvailable())
     {
@@ -140,7 +141,7 @@ void lexerTest()
 //语法分析器测试
 void parserTest()
 {
-    string fileAddress = "C:\\Users\\izumi\\Desktop\\code.txt";
+    
     Scanner scanner(fileAddress);
 
     Parser parser(scanner);
@@ -156,7 +157,6 @@ void generatorTest()
     TheJIT = std::make_unique<RustJIT>();
     InitializeModuleAndPassManager();
 
-    string fileAddress = "C:\\Users\\22152\\Desktop\\test.rs";
     Scanner scanner(fileAddress);
     if (!scanner.getFileAvailable())
     {

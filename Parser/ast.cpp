@@ -12,7 +12,8 @@ extern LLVMContext TheContext;
 extern IRBuilder<> Builder;
 extern std::unique_ptr<Module> TheModule;
 extern std::map<std::string, AllocaInst*> NamedValues;
-//extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+//extern ExecutionEngine* TheExcution;
 extern std::unique_ptr<llvmRustCompiler::RustJIT> TheJIT;
 extern std::map<std::string, std::unique_ptr<llvmRustCompiler::PrototypeAST>> FunctionProtos;
 
@@ -173,7 +174,6 @@ namespace llvmRustCompiler {
 				break;
 			}
 			Builder.CreateStore(Val, Variable);
-			TheModule->dump();
 			return Val;
 		}
 
@@ -264,32 +264,32 @@ namespace llvmRustCompiler {
 		case (char)TokenValue::LESS_THAN:
 			//整型目前只支持有符号判断
 			if (L->getType()->isIntegerTy()) return Builder.CreateICmpSLT(L, R, "slttmp");
-			else if (L->getType()->isFloatingPointTy()) L = Builder.CreateFCmpULT(L, R, "ulttmp");
+			else if (L->getType()->isFloatingPointTy()) return Builder.CreateFCmpULT(L, R, "ulttmp");
 			break; 
 		case (char)TokenValue::LESS_OR_EQUAL:
 			//整型目前只支持有符号判断
 			if (L->getType()->isIntegerTy()) return Builder.CreateICmpSLE(L, R, "sletmp");
-			else if (L->getType()->isFloatingPointTy()) L = Builder.CreateFCmpULE(L, R, "uletmp");
+			else if (L->getType()->isFloatingPointTy()) return Builder.CreateFCmpULE(L, R, "uletmp");
 			break;
 		case (char)TokenValue::GREATER_THAN:
 			//整型目前只支持有符号判断
 			if (L->getType()->isIntegerTy()) return Builder.CreateICmpSGT(L, R, "sgttmp");
-			else if (L->getType()->isFloatingPointTy()) L = Builder.CreateFCmpUGT(L, R, "ugttmp");
+			else if (L->getType()->isFloatingPointTy()) return Builder.CreateFCmpUGT(L, R, "ugttmp");
 			break;
 		case (char)TokenValue::GREATER_OR_EQUAL:
 			//整型目前只支持有符号判断
 			if (L->getType()->isIntegerTy()) return Builder.CreateICmpSGE(L, R, "sgetmp");
-			else if (L->getType()->isFloatingPointTy()) L = Builder.CreateFCmpUGE(L, R, "ugetmp");
+			else if (L->getType()->isFloatingPointTy()) return Builder.CreateFCmpUGE(L, R, "ugetmp");
 			break;
 		case '!=':
 			//整型目前只支持有符号判断
 			if (L->getType()->isIntegerTy()) return Builder.CreateICmpNE(L, R, "netmp");
-			else if (L->getType()->isFloatingPointTy()) L = Builder.CreateFCmpUNE(L, R, "unetmp");
+			else if (L->getType()->isFloatingPointTy()) return Builder.CreateFCmpUNE(L, R, "unetmp");
 			break;
 		case '==':
 			//整型目前只支持有符号判断
 			if (L->getType()->isIntegerTy()) return Builder.CreateICmpEQ(L, R, "eqtmp");
-			else if (L->getType()->isFloatingPointTy()) L = Builder.CreateFCmpUEQ(L, R, "ueqtmp");
+			else if (L->getType()->isFloatingPointTy()) return Builder.CreateFCmpUEQ(L, R, "ueqtmp");
 			break;
 		default:
 			break;
@@ -391,14 +391,16 @@ namespace llvmRustCompiler {
 		TheFunction->getBasicBlockList().push_back(MergeBB);
 		Builder.SetInsertPoint(MergeBB);
 		//此处可能存在问题
-		PHINode* PN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "iftmp");
+		PHINode* PN = nullptr;
+		if (IfVs.back()->getType()->isFloatingPointTy()) {
+			PN = Builder.CreatePHI(Type::getDoubleTy(TheContext), 2, "ifftmp");
+		}
+		else if (IfVs.back()->getType()->isIntegerTy()) {
+			PN = Builder.CreatePHI(Type::getInt32Ty(TheContext), 2, "ifitmp");
+		}
 
-		for (auto& IfV : IfVs) {
-			PN->addIncoming(IfV, IfBB);
-		}
-		for (auto& ElseV : ElseVs) {
-			PN->addIncoming(ElseV, ElseBB);
-		}
+		PN->addIncoming(IfVs.back(), IfBB);
+		PN->addIncoming(ElseVs.back(), ElseBB);
 		return PN;
 	}
 
@@ -408,7 +410,25 @@ namespace llvmRustCompiler {
 	}
 
 	Value* WhileExprAST::codegen() {
-		return nullptr;
+		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+		BasicBlock* LoopBB = BasicBlock::Create(TheContext, "loop", TheFunction);
+		Builder.CreateBr(LoopBB);
+		// Start insertion in LoopBB.
+		Builder.SetInsertPoint(LoopBB);
+		for (auto& expr : Body) {
+			if (!expr->codegen())
+				return nullptr;
+		}
+		Value* EndCond = End->codegen();
+		if (!EndCond)
+			return nullptr;
+		BasicBlock* AfterBB =
+			BasicBlock::Create(TheContext, "afterloop", TheFunction);
+		Builder.CreateCondBr(EndCond, LoopBB, AfterBB);
+		// Any new code will be inserted in AfterBB.
+		Builder.SetInsertPoint(AfterBB);
+
+		return Constant::getNullValue(Type::getDoubleTy(TheContext));
 	}
 
 	Value* VarExprAST::codegen() {
@@ -429,15 +449,14 @@ namespace llvmRustCompiler {
 			else { // If not specified, use 0.0.
 				InitVal = ConstantFP::get(TheContext, APFloat(0.0));
 			}
-
 			AllocaInst* Alloca;
 			//AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, VarName);
 			switch (Type) {
 			case TokenType::tok_integer:
-				Alloca = Builder.CreateAlloca(Type::getInt32Ty(TheContext), InitVal, "vartmp");
+				Alloca = Builder.CreateAlloca(Type::getInt32Ty(TheContext), nullptr, "varitmp");
 				break;
 			case TokenType::tok_float:
-				Alloca = Builder.CreateAlloca(Type::getFloatTy(TheContext), InitVal, "vartmp");
+				Alloca = Builder.CreateAlloca(Type::getDoubleTy(TheContext), nullptr, "varftmp");
 				break;
 			default:
 				errorGenerator(std::string("此数据类型暂时不支持"));
@@ -541,8 +560,9 @@ namespace llvmRustCompiler {
 			verifyFunction(*TheFunction);
 
 			// Run the optimizer on the function.
-			//TheFPM->run(*TheFunction);
-
+			TheFPM->run(*TheFunction);
+			//void* functionAddr = TheExcution->getPointerToFunction(TheFunction);
+			//std::cout << "address of function: " << std::hex << functionAddr << std::endl;
 			return TheFunction;
 		}
 		return nullptr;
