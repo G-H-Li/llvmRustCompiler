@@ -12,7 +12,7 @@ extern LLVMContext TheContext;
 extern IRBuilder<> Builder;
 extern std::unique_ptr<Module> TheModule;
 extern std::map<std::string, AllocaInst*> NamedValues;
-extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+//extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<llvmRustCompiler::RustJIT> TheJIT;
 extern std::map<std::string, std::unique_ptr<llvmRustCompiler::PrototypeAST>> FunctionProtos;
 
@@ -112,11 +112,6 @@ namespace llvmRustCompiler {
 				errorGenerator(std::string("未定义的变量名"));
 				return nullptr;
 			}
-			// 判断操作符两侧的类型是否一致
-			if (Val->getType() != Variable->getType()) {
-				errorGenerator(std::string("操作符两侧的类型不一致"));
-				return nullptr;
-			}
 			switch (Op) {
 			case (char)TokenValue::PLUS_EQUAL:
 				if (Variable->getType()->isIntegerTy()) Val = Builder.CreateAdd(Variable, Val, "addtmp");
@@ -178,6 +173,7 @@ namespace llvmRustCompiler {
 				break;
 			}
 			Builder.CreateStore(Val, Variable);
+			TheModule->dump();
 			return Val;
 		}
 
@@ -304,6 +300,7 @@ namespace llvmRustCompiler {
 		assert(F && "binary operator not found!");
 
 		Value* Ops[] = { L, R };
+		
 		return Builder.CreateCall(F, Ops, "binop");
 	}
 
@@ -415,9 +412,8 @@ namespace llvmRustCompiler {
 	}
 
 	Value* VarExprAST::codegen() {
-		std::vector<AllocaInst*> OldBindings;
 
-		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+		//Function* TheFunction = Builder.GetInsertBlock()->getParent();
 
 		// Register all variables and emit their initializer.
 		for (unsigned i = 0, e = VarNames.size(); i != e; ++i) {
@@ -434,9 +430,9 @@ namespace llvmRustCompiler {
 				InitVal = ConstantFP::get(TheContext, APFloat(0.0));
 			}
 
-			//AllocaInst* Alloca;
+			AllocaInst* Alloca;
 			//AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, VarName);
-			/*switch (Type) {
+			switch (Type) {
 			case TokenType::tok_integer:
 				Alloca = Builder.CreateAlloca(Type::getInt32Ty(TheContext), InitVal, "vartmp");
 				break;
@@ -446,29 +442,29 @@ namespace llvmRustCompiler {
 			default:
 				errorGenerator(std::string("此数据类型暂时不支持"));
 				return nullptr;
-			}*/
-
-			AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, VarName);
+			}
+			//AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, VarName);
 			Builder.CreateStore(InitVal, Alloca);
-
 			// Remember the old variable binding so that we can restore the binding when
 			// we unrecurse.
-			OldBindings.push_back(NamedValues[VarName]);
+			
+			AllocaInst* V = NamedValues[VarNames[0].first];
+			if (!V) {
 
+				NamedValues[VarNames[0].first] = Alloca;
+			}
 			// Remember this binding.
-			NamedValues[VarName] = Alloca;
+			
 		}
 
-		Value* BodyVal = Body->codegen();
+		/*Value* BodyVal = Body->codegen();
 		if (!BodyVal)
-			return nullptr;
+			return nullptr;*/
 
 		// Pop all our variables from scope.
-		for (unsigned i = 0, e = VarNames.size(); i != e; ++i)
-			NamedValues[VarNames[i].first] = OldBindings[i];
 
 		// Return the body computation.
-		return BodyVal;
+		return nullptr;
 	}
 
 	Function* PrototypeAST::codegen() {
@@ -521,7 +517,7 @@ namespace llvmRustCompiler {
 		Builder.SetInsertPoint(BB);
 
 		// Record the function arguments in the NamedValues map.
-		NamedValues.clear();
+		//NamedValues.clear();
 		for (auto& Arg : TheFunction->args()) {
 			AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, Arg.getName());
 

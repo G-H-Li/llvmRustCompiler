@@ -42,6 +42,7 @@ namespace llvmRustCompiler {
 		std::unique_ptr<FunctionAST> ParseDefinition();
 		std::unique_ptr<FunctionAST> ParseTopLevelExpr();
 		Scanner& getScanner();
+		Token& setToken(Token& token);
 
 
 	private:

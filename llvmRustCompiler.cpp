@@ -16,7 +16,7 @@ std::unique_ptr<Module> TheModule;
 //记录代码的符号表
 std::map<std::string, AllocaInst*> NamedValues;
 // Pass 管理
-std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+//std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 // JIT
 std::unique_ptr<RustJIT> TheJIT;
 // 函数映射
@@ -28,7 +28,7 @@ void InitializeModuleAndPassManager() {
     TheModule = std::make_unique<Module>("my cool jit", TheContext);
     TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
 
-    // Create a new pass manager attached to it.
+    /* // Create a new pass manager attached to it.
     TheFPM = std::make_unique<legacy::FunctionPassManager>(TheModule.get());
 
     // Do simple "peephole" optimizations and bit-twiddling optzns.
@@ -40,7 +40,7 @@ void InitializeModuleAndPassManager() {
     // Simplify the control flow graph (deleting unreachable blocks, etc).
     TheFPM->add(createCFGSimplificationPass());
 
-    TheFPM->doInitialization();
+    TheFPM->doInitialization();*/
 }
 
 //处理定义函数
@@ -56,7 +56,7 @@ void HandleDefinition(Parser& parser) {
     }
     else {
         // Skip token for error recovery.
-        parser.getScanner().getNextToken();
+        parser.getScanner().getNextToken(); parser.setToken(parser.getScanner().getToken());
     }
 }
 
@@ -82,18 +82,19 @@ void HandleTopLevelExpression(Parser& parser) {
     }
     else {
         // Skip token for error recovery.
-        parser.getScanner().getNextToken();
+        parser.getScanner().getNextToken(); parser.setToken(parser.getScanner().getToken());
     }
 }
 
 /// top ::= definition | external | expression | ';'
 void MainLoop(Parser& parser) {
     while (true) {
+        TheModule->dump();
         switch (parser.getScanner().getToken().getTokenType()) {
         case TokenType::tok_eof:
             return;
         case TokenType::tok_delimiter: // ignore top-level semicolons.
-            parser.getScanner().getNextToken();
+            parser.getScanner().getNextToken(); parser.setToken(parser.getScanner().getToken());
             break;
         default: {
             switch (parser.getScanner().getToken().getTokenValue()) {
@@ -164,7 +165,7 @@ void generatorTest()
     }
     Parser parser(scanner);
 
-    parser.getScanner().getNextToken();
+    parser.getScanner().getNextToken(); parser.setToken(parser.getScanner().getToken());
 
     MainLoop(parser);
 
