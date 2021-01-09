@@ -56,7 +56,7 @@ void HandleDefinition(Parser& parser) {
     }
     else {
         // Skip token for error recovery.
-        parser.getScanner().getNextToken();
+        parser.getScanner().getNextToken(); parser.setToken(parser.getScanner().getToken());
     }
 }
 
@@ -82,18 +82,19 @@ void HandleTopLevelExpression(Parser& parser) {
     }
     else {
         // Skip token for error recovery.
-        parser.getScanner().getNextToken();
+        parser.getScanner().getNextToken(); parser.setToken(parser.getScanner().getToken());
     }
 }
 
 /// top ::= definition | external | expression | ';'
 void MainLoop(Parser& parser) {
     while (true) {
+        TheModule->dump();
         switch (parser.getScanner().getToken().getTokenType()) {
         case TokenType::tok_eof:
             return;
         case TokenType::tok_delimiter: // ignore top-level semicolons.
-            parser.getScanner().getNextToken();
+            parser.getScanner().getNextToken(); parser.setToken(parser.getScanner().getToken());
             break;
         default: {
             switch (parser.getScanner().getToken().getTokenValue()) {
@@ -164,7 +165,7 @@ void generatorTest()
     }
     Parser parser(scanner);
 
-    parser.getScanner().getNextToken();
+    parser.getScanner().getNextToken(); parser.setToken(parser.getScanner().getToken());
 
     MainLoop(parser);
 

@@ -248,26 +248,26 @@ namespace llvmRustCompiler
     // 局部变量
     class VarExprAST : public ExprAST {
         std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>> VarNames;
-        std::unique_ptr<ExprAST> Body;
+        //std::unique_ptr<ExprAST> Body;
         //增加type属性
-        //TokenType Type;
+        TokenType Type;
 
     public:
-        /*VarExprAST(TokenLocation Loc,
+        VarExprAST(TokenLocation Loc,
             std::vector<std::pair<std::string,
             std::unique_ptr<ExprAST>>> VarNames,
             TokenType Type)
-            : ExprAST(Loc), VarNames(std::move(VarNames)), Type(Type) {}*/
-        VarExprAST(TokenLocation Loc,
+            : ExprAST(Loc), VarNames(std::move(VarNames)), Type(Type) {}
+        /*VarExprAST(TokenLocation Loc,
             std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>> VarNames,
             std::unique_ptr<ExprAST> Body)
-            :ExprAST(Loc), VarNames(std::move(VarNames)), Body(std::move(Body)) {}
+            :ExprAST(Loc), VarNames(std::move(VarNames)), Body(std::move(Body)) {}*/
         
         raw_ostream& dump(raw_ostream& out, int ind) override {
             ExprAST::dump(out << "var", ind);
             for (const auto& NamedVar : VarNames)
                 NamedVar.second->dump(indent(out, ind) << NamedVar.first << ':', ind + 1);
-            Body->dump(indent(out, ind) << "Body:", ind + 1);
+            //Body->dump(indent(out, ind) << "Body:", ind + 1);
             return out;
         }
         Value* codegen() override;
