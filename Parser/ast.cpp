@@ -6,15 +6,22 @@
 */
 
 #include "ast.h"
-#include "../constant.h"
+
+
+extern LLVMContext TheContext;
+extern IRBuilder<> Builder;
+extern std::unique_ptr<Module> TheModule;
+extern std::map<std::string, AllocaInst*> NamedValues;
+extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+extern std::unique_ptr<llvmRustCompiler::RustJIT> TheJIT;
+extern std::map<std::string, std::unique_ptr<llvmRustCompiler::PrototypeAST>> FunctionProtos;
 
 namespace llvmRustCompiler {
 
-
 	Function* getFunction(std::string Name) {
 		// 首先看模块中是否添加此函数
-		//if (auto* F = TheModule->getFunction(Name))
-			//return F;
+		if (auto* F = TheModule->getFunction(Name))
+			return F;
 
 		// 寻找合适函数，如果没有找到，则对函数原型进行代码生成
 		auto FI = FunctionProtos.find(Name);
@@ -27,7 +34,7 @@ namespace llvmRustCompiler {
 
 	/// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
 	/// the function.  This is used for mutable variables etc.
-	static AllocaInst* CreateEntryBlockAlloca(Function* TheFunction,
+	AllocaInst* CreateEntryBlockAlloca(Function* TheFunction,
 		StringRef VarName) {
 		IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 			TheFunction->getEntryBlock().begin());
@@ -85,8 +92,8 @@ namespace llvmRustCompiler {
 	Value* BinaryExprAST::codegen() {
 
 		// Special case '=' because we don't want to emit the LHS as an expression.
-		if (Op == '='|| Op == '+=' || Op == '-=' || Op == '*=' || Op == '/=' || Op == '%='
-			|| Op == '&=' || Op == '|=' || Op == '^=' || Op == '>>=' || Op == '<<=') {
+		//|| Op == '*=' || Op == '/=' || Op == '%=' || Op == '&=' || Op == '|=' || Op == '^=' || Op == '>>=' || Op == '<<=')
+		if (Op == (char)TokenValue::EQUAL|| Op == (char)TokenValue::PLUS_EQUAL || Op == (char)TokenValue::MINUS_EQUAL){
 			// 将左部转为变量AST
 			VariableExprAST* LHSE = static_cast<VariableExprAST*>(LHS.get());
 			if (!LHSE) {
@@ -111,15 +118,15 @@ namespace llvmRustCompiler {
 				return nullptr;
 			}
 			switch (Op) {
-			case '+=':
+			case (char)TokenValue::PLUS_EQUAL:
 				if (Variable->getType()->isIntegerTy()) Val = Builder.CreateAdd(Variable, Val, "addtmp");
 				else if (Variable->getType()->isFloatingPointTy()) Val = Builder.CreateFAdd(Variable, Val, "faddtmp");
 				break;
-			case '-=':
+			case (char)TokenValue::MINUS_EQUAL:
 				if (Variable->getType()->isIntegerTy()) Val = Builder.CreateSub(Variable, Val, "subtmp");
 				else if (Variable->getType()->isFloatingPointTy()) Val = Builder.CreateFSub(Variable, Val, "fsubtmp");
 				break;
-			case '*=':
+			/*case '*=':
 				if (Variable->getType()->isIntegerTy()) Val = Builder.CreateMul(Variable, Val, "multmp");
 				else if (Variable->getType()->isFloatingPointTy()) Val = Builder.CreateFMul(Variable, Val, "fmultmp");
 				break;
@@ -166,7 +173,7 @@ namespace llvmRustCompiler {
 					errorGenerator(std::string("异或运算必须为整型"));
 					return nullptr;
 				}
-				break;
+				break;*/
 			default:
 				break;
 			}
@@ -181,14 +188,14 @@ namespace llvmRustCompiler {
 			return nullptr;
 		}
 		//由于&&和||不需要判断类型是否一致，在此处单独运算
-		if (Op == '&&' || Op == '||') {
+		if (Op == (char)TokenValue::LOGIC_AND || Op == (char)TokenValue::LOGIC_OR) {
 			L = getLogicalVal(L);
 			R = getLogicalVal(R);
 			switch (Op)
 			{
-			case '&&':
+			case (char)TokenValue::LOGIC_AND:
 				return Builder.CreateAnd(L, R, "landtmp");
-			case '||':
+			case (char)TokenValue::LOGIC_OR:
 				return Builder.CreateOr(L, R, "lortmp");
 			default:
 				break;
@@ -202,34 +209,34 @@ namespace llvmRustCompiler {
 		}
 		
 		switch (Op) {
-		case '+':
+		case (char)TokenValue::PLUS:
 			if (L->getType()->isIntegerTy()) return Builder.CreateAdd(L, R, "addtmp");
 			else if (L->getType()->isFloatingPointTy()) return Builder.CreateFAdd(L, R, "faddtmp");
 			break;
-		case '-':
+		case (char)TokenValue::MINUS:
 			if (L->getType()->isIntegerTy()) return Builder.CreateSub(L, R, "subtmp");
 			else if(L->getType()->isFloatingPointTy()) return Builder.CreateFSub(L, R, "fsubtmp");
 			break;
-		case '*':
+		case (char)TokenValue::MULTIPLY:
 			if (L->getType()->isIntegerTy()) return Builder.CreateMul(L, R, "multmp");
 			else if (L->getType()->isFloatingPointTy()) return Builder.CreateFMul(L, R, "fmultmp");
 			break;
-		case '/':
+		case (char)TokenValue::DIVIDE:
 			if (L->getType()->isIntegerTy()) return Builder.CreateSDiv(L, R, "divtmp");
 			else if (L->getType()->isFloatingPointTy()) return Builder.CreateFDiv(L, R, "fdivtmp");
 			break;
-		case '%':
+		case (char)TokenValue::REMAINDER:
 			if (L->getType()->isIntegerTy()) return Builder.CreateSRem(L, R, "remtmp");
 			else if (L->getType()->isFloatingPointTy()) return Builder.CreateFRem(L, R, "fremtmp");
 			break;
-		case '<<':
+		case (char)TokenValue::SHL:
 			if (L->getType()->isIntegerTy()) return Builder.CreateShl(L, R, "shltmp");
 			else {
 				errorGenerator(std::string("左移运算必须为整型"));
 				return nullptr;
 			}
 			break;
-		case '>>':
+		case (char)TokenValue::SHR:
 			// 算数右移
 			if (L->getType()->isIntegerTy()) return Builder.CreateAShr(L, R, "ashrtmp");
 			else {
@@ -237,43 +244,43 @@ namespace llvmRustCompiler {
 				return nullptr;
 			}
 			break;
-		case '&':
+		case (char)TokenValue::AND:
 			if (L->getType()->isIntegerTy()) return Builder.CreateAnd(L, R, "andtmp");
 			else {
 				errorGenerator(std::string("与运算必须为整型"));
 				return nullptr;
 			}
 			break;
-		case '|':
+		case (char)TokenValue::OR:
 			if (L->getType()->isIntegerTy()) return Builder.CreateOr(L, R, "ortmp");
 			else {
 				errorGenerator(std::string("或运算必须为整型"));
 				return nullptr;
 			}
 			break;
-		case '^':
+		case (char)TokenValue::XOR:
 			if (L->getType()->isIntegerTy()) return Builder.CreateXor(L, R, "xortmp");
 			else {
 				errorGenerator(std::string("异或运算必须为整型"));
 				return nullptr;
 			}
 			break;
-		case '<':
+		case (char)TokenValue::LESS_THAN:
 			//整型目前只支持有符号判断
 			if (L->getType()->isIntegerTy()) return Builder.CreateICmpSLT(L, R, "slttmp");
 			else if (L->getType()->isFloatingPointTy()) L = Builder.CreateFCmpULT(L, R, "ulttmp");
 			break; 
-		case '<=':
+		case (char)TokenValue::LESS_OR_EQUAL:
 			//整型目前只支持有符号判断
 			if (L->getType()->isIntegerTy()) return Builder.CreateICmpSLE(L, R, "sletmp");
 			else if (L->getType()->isFloatingPointTy()) L = Builder.CreateFCmpULE(L, R, "uletmp");
 			break;
-		case '>':
+		case (char)TokenValue::GREATER_THAN:
 			//整型目前只支持有符号判断
 			if (L->getType()->isIntegerTy()) return Builder.CreateICmpSGT(L, R, "sgttmp");
 			else if (L->getType()->isFloatingPointTy()) L = Builder.CreateFCmpUGT(L, R, "ugttmp");
 			break;
-		case '>=':
+		case (char)TokenValue::GREATER_OR_EQUAL:
 			//整型目前只支持有符号判断
 			if (L->getType()->isIntegerTy()) return Builder.CreateICmpSGE(L, R, "sgetmp");
 			else if (L->getType()->isFloatingPointTy()) L = Builder.CreateFCmpUGE(L, R, "ugetmp");
@@ -410,7 +417,7 @@ namespace llvmRustCompiler {
 	Value* VarExprAST::codegen() {
 		std::vector<AllocaInst*> OldBindings;
 
-		Function* TheFunction = Builder.GetInsertBlock()->getParent();
+		//Function* TheFunction = Builder.GetInsertBlock()->getParent();
 
 		// Register all variables and emit their initializer.
 		for (unsigned i = 0, e = VarNames.size(); i != e; ++i) {
@@ -427,7 +434,18 @@ namespace llvmRustCompiler {
 				InitVal = ConstantFP::get(TheContext, APFloat(0.0));
 			}
 
-			AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, VarName);
+			AllocaInst* Alloca;
+			//AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, VarName);
+			switch (Type) {
+			case TokenType::tok_integer:
+				Alloca = Builder.CreateAlloca(Type::getInt32Ty(TheContext), InitVal, "vartmp");
+			case TokenType::tok_float:
+				Alloca = Builder.CreateAlloca(Type::getFloatTy(TheContext), InitVal, "vartmp");
+			default:
+				errorGenerator(std::string("此数据类型暂时不支持"));
+				return nullptr;
+			}
+			
 			Builder.CreateStore(InitVal, Alloca);
 
 			// Remember the old variable binding so that we can restore the binding when
@@ -438,17 +456,12 @@ namespace llvmRustCompiler {
 			NamedValues[VarName] = Alloca;
 		}
 
-		// Codegen the body, now that all vars are in scope.
-		Value* BodyVal = Body->codegen();
-		if (!BodyVal)
-			return nullptr;
-
 		// Pop all our variables from scope.
 		for (unsigned i = 0, e = VarNames.size(); i != e; ++i)
 			NamedValues[VarNames[i].first] = OldBindings[i];
 
 		// Return the body computation.
-		return BodyVal;
+		return nullptr;
 	}
 
 	Function* PrototypeAST::codegen() {
@@ -516,6 +529,7 @@ namespace llvmRustCompiler {
 			Value* fnVal = expr->codegen();
 			BodyVals.push_back(fnVal);
 		}
+		//取最后一个值作为函数返回值
 		if (Value* RetVal = BodyVals.back()) {
 			// Finish off the function.
 			Builder.CreateRet(RetVal);

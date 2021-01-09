@@ -7,6 +7,42 @@ using namespace llvm;
 using namespace std;
 
 
+//对应每个LLVM的线程
+LLVMContext TheContext;
+//指令生成的辅助对象，用于跟踪插入指令和生成新指令
+IRBuilder<> Builder(TheContext);
+//皴法代码段中所有函数和全局变量的结构
+std::unique_ptr<Module> TheModule;
+//记录代码的符号表
+std::map<std::string, AllocaInst*> NamedValues;
+// Pass 管理
+std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+// JIT
+std::unique_ptr<RustJIT> TheJIT;
+// 函数映射
+std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
+
+
+void InitializeModuleAndPassManager() {
+    // Open a new module.
+    TheModule = std::make_unique<Module>("my cool jit", TheContext);
+    TheModule->setDataLayout(TheJIT->getTargetMachine().createDataLayout());
+
+    // Create a new pass manager attached to it.
+    TheFPM = std::make_unique<legacy::FunctionPassManager>(TheModule.get());
+
+    // Do simple "peephole" optimizations and bit-twiddling optzns.
+    TheFPM->add(createInstructionCombiningPass());
+    // Reassociate expressions.
+    TheFPM->add(createReassociatePass());
+    // Eliminate Common SubExpressions.
+    TheFPM->add(createGVNPass());
+    // Simplify the control flow graph (deleting unreachable blocks, etc).
+    TheFPM->add(createCFGSimplificationPass());
+
+    TheFPM->doInitialization();
+}
+
 //处理定义函数
 void HandleDefinition(Parser& parser) {
     if (auto FnAST = parser.ParseDefinition()) {

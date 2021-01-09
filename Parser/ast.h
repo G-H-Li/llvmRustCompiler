@@ -11,8 +11,12 @@
 #include "llvm/IR/Value.h"
 #include "../Lexer/token.h"
 #include "../Error/error.h"
+#include "../Generator/rustJIT.h"
 #include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/IRBuilder.h"
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -239,23 +243,6 @@ namespace llvmRustCompiler
     // TODO loop循环
     class LoopExprAST : public ExprAST {
 
-    };
-
-
-
-    // 局部变量
-    class VarExprAST : public ExprAST {
-        std::vector<std::pair<std::string, std::unique_ptr<ExprAST>>> VarNames;
-        //删除掉没有的body
-        //增加type属性
-        TokenType Type;
-
-    public:
-        VarExprAST(TokenLocation Loc,
-            std::vector<std::pair<std::string,
-            std::unique_ptr<ExprAST>>> VarNames,
-            TokenType Type)
-            : ExprAST(Loc), VarNames(std::move(VarNames)), Type(Type) {}
     };
 
     // 局部变量

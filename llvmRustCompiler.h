@@ -9,5 +9,8 @@
 #include "Generator/rustJIT.h"
 #include "Parser/ast.h"
 #include "Parser/parser.h"
-#include "constant.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/InstCombine/InstCombine.h"
+#include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Support/TargetSelect.h"
 #include <iostream>
