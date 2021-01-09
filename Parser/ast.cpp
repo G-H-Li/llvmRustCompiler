@@ -12,7 +12,7 @@ extern LLVMContext TheContext;
 extern IRBuilder<> Builder;
 extern std::unique_ptr<Module> TheModule;
 extern std::map<std::string, AllocaInst*> NamedValues;
-extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
+//extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<llvmRustCompiler::RustJIT> TheJIT;
 extern std::map<std::string, std::unique_ptr<llvmRustCompiler::PrototypeAST>> FunctionProtos;
 
