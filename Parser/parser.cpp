@@ -642,6 +642,10 @@ namespace llvmRustCompiler {
 
         scanner.getNextToken(); token = scanner.getToken(); //吃掉左大括号
         while (scanner.getToken().getTokenValue() != TokenValue::RIGHT_BRACE) {
+            if (scanner.getToken().getTokenValue() == TokenValue::KW_RETURN) {
+                scanner.getNextToken(); token = scanner.getToken();
+                continue;
+            }
             Body.push_back(std::move(ParseExpression()));
             scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
         }

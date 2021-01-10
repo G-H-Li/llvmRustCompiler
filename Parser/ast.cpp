@@ -36,10 +36,15 @@ namespace llvmRustCompiler {
 	/// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
 	/// the function.  This is used for mutable variables etc.
 	AllocaInst* CreateEntryBlockAlloca(Function* TheFunction,
-		StringRef VarName) {
+		StringRef VarName, Type* type ) {
 		IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 			TheFunction->getEntryBlock().begin());
-		return TmpB.CreateAlloca(Type::getDoubleTy(TheContext), nullptr, VarName);
+		if (type->isIntegerTy()) {
+			return TmpB.CreateAlloca(Type::getInt32Ty(TheContext), nullptr, VarName);
+		}
+		else {
+			return TmpB.CreateAlloca(Type::getDoubleTy(TheContext), nullptr, VarName);
+		}
 	}
 
 	Value* FPNumberExprAST::codegen() {
@@ -487,9 +492,10 @@ namespace llvmRustCompiler {
 	}
 
 	Function* PrototypeAST::codegen() {
-		std::vector<llvm::Type *> ArgsType(Args.size());
-		Args.push_back(std::make_pair(Type, "result"));
-		for (auto& arg : Args) {
+		std::vector<llvm::Type *> ArgsType;
+		std::vector<std::pair<TokenType, std::string>> temp = Args;
+		temp.push_back(std::make_pair(Type, "result"));
+		for (auto& arg : temp) {
 			TokenType type = arg.first;
 			switch (type)
 			{
@@ -538,7 +544,7 @@ namespace llvmRustCompiler {
 		// Record the function arguments in the NamedValues map.
 		//NamedValues.clear();
 		for (auto& Arg : TheFunction->args()) {
-			AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, Arg.getName());
+			AllocaInst* Alloca = CreateEntryBlockAlloca(TheFunction, Arg.getName(), Arg.getType());
 
 			// Store the initial value into the alloca.
 			Builder.CreateStore(&Arg, Alloca);

@@ -1,16 +1,28 @@
-fn main() {
-    let n = 5;
+//test
+fn add(x:i32, y:i32) -> i32 { return x+y; };
+fn wmain(){
+    let mut b:i32 = 2 << 2;
+    while b > 8{
+        b += add(2,1);
+    };
+};
 
-    if n < 0 {
-        let b = 7;
-    }else {
-        let n= 5;
-    }
+fn main(){
+    let mut n:i32 = 5 + 3; 
+    if n<6
+    {
+        n = n/2;
+    }else{
+        n = 5;
+    };
+};
 
-    let big_n =
-        if n < 10 && n > -10 {
-            10 * n
-        } else {
-            n / 2
-        };
+fn fmain(){
+    let mut a:f32 = 5.3 - 2.3;
+    if a> 3.0
+    {
+        a = a* 2.5;
+    }else{
+        a = 4.5;
+    };
 }
