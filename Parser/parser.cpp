@@ -244,7 +244,8 @@ namespace llvmRustCompiler {
 
         while (scanner.getToken().getTokenValue() != TokenValue::RIGHT_BRACE) {
             If.push_back(std::move(ParseExpression()));
-            scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
+            if (scanner.getToken().getTokenValue() == TokenValue::SEMICOLON)
+                scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
         }
 
         scanner.getNextToken(); token = scanner.getToken(); //吃掉右大括号
@@ -265,7 +266,8 @@ namespace llvmRustCompiler {
 
         while (scanner.getToken().getTokenValue() != TokenValue::RIGHT_BRACE) {
             Else.push_back(std::move(ParseExpression()));
-            scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
+            if (scanner.getToken().getTokenValue() == TokenValue::SEMICOLON)
+                scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
         }
 
         scanner.getNextToken(); token = scanner.getToken(); //吃掉右大括号
@@ -362,7 +364,8 @@ namespace llvmRustCompiler {
 
         while (scanner.getToken().getTokenValue() != TokenValue::RIGHT_BRACE) {
             Body.push_back(std::move(ParseExpression()));
-            scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
+            if (scanner.getToken().getTokenValue() == TokenValue::SEMICOLON)
+                scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
         }
 
         scanner.getNextToken(); token = scanner.getToken(); //吃掉右大括号
@@ -524,6 +527,21 @@ namespace llvmRustCompiler {
         if (!LHS)
             return nullptr;
 
+        //处理分号问题
+        switch (scanner.getToken().getTokenValue())
+        {
+        case TokenValue::KW_LET:
+            return LHS;
+        case TokenValue::KW_IF:
+            return LHS;
+        case TokenValue::KW_FOR:
+            return LHS;
+        case TokenValue::KW_WHILE:
+            return LHS;
+        default:
+            break;
+        }
+
         return ParseBinOpRHS(0, std::move(LHS));
     }
 
@@ -647,7 +665,8 @@ namespace llvmRustCompiler {
                 continue;
             }
             Body.push_back(std::move(ParseExpression()));
-            scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
+            if (scanner.getToken().getTokenValue() == TokenValue::SEMICOLON)
+                scanner.getNextToken(); token = scanner.getToken(); //吃掉函数体中的分号 ';'
         }
 
         scanner.getNextToken(); token = scanner.getToken(); //吃掉右大括号
