@@ -23,7 +23,10 @@ std::unique_ptr<RustJIT> TheJIT;
 // 函数映射
 std::map<std::string, std::unique_ptr<PrototypeAST>> FunctionProtos;
 
-static string fileAddress = "C:\\Users\\22152\\Desktop\\test.rs";
+//输入文件地址
+string fileAddress;
+//是否运行
+bool isRun;
 
 void InitializeModuleAndPassManager() {
     // Open a new module.
@@ -158,11 +161,6 @@ void generatorTest()
     InitializeModuleAndPassManager();
 
     Scanner scanner(fileAddress);
-    if (!scanner.getFileAvailable())
-    {
-        fprintf(stderr, "file is not exist.");
-        return;
-    }
     Parser parser(scanner);
 
     parser.getScanner().getNextToken(); parser.setToken(parser.getScanner().getToken());
@@ -172,10 +170,78 @@ void generatorTest()
     TheModule->dump();
 }
 
+/* 以下函数用作输入输出*/
+void showUsage()
+{
+    cout << "Usage   :{lexer|parser|generator|run} <your rust file path>" << endl;
+    cout << "Options :" << endl;
+    cout << "your rust file path   Your rust file, this option MUST be given, sugggest using absolute address" << endl;
+    return;
+}
+
+vector<string> split(const string& str, const string& delim) {
+    vector<string> res;
+    if ("" == str) return res;
+    //先将要切割的字符串从string类型转换为char*类型
+    char* strs = new char[str.length() + 1]; //不要忘了
+    strcpy(strs, str.c_str());
+
+    char* d = new char[delim.length() + 1];
+    strcpy(d, delim.c_str());
+
+    char* p = strtok(strs, d);
+    while (p) {
+        string s = p; //分割得到的字符串转换为string类型
+        res.push_back(s); //存入结果数组
+        p = strtok(NULL, d);
+    }
+
+    return res;
+}
+
 int main()
 {
-    //lexerTest();
-    //parserTest();
-    generatorTest();
+    string command;
+    showUsage();
+    getline(cin, command);
+    vector<string> tmp = split(command, " ");
+    if (tmp.empty() || tmp.size() < 2) {
+        cout << "Please input valid command" << endl;
+        showUsage();
+    }
+    vector<string> path = split(tmp[1], " ");
+    if (path.size() > 1) {
+        cout << "Please input valid file path" << endl;
+    }
+    ifstream fin(path[0]);
+    if (!fin) {
+        cout << "file not exists" << endl;
+    }
+    else {
+        fin.close();
+    }
+    fileAddress = path[0];
+    string device = tmp[0];
+    if (device == "lexer") {
+        lexerTest();
+        cout << endl << "lexer compeleted" << endl;
+    }
+    else if (device == "parser") {
+        parserTest();
+        cout << endl << "parser compeleted" << endl;
+    }
+    else if (device == "generator") {
+        isRun = false;
+        generatorTest();
+        cout << endl << "generator compeleted" << endl;
+    }
+    else if (device == "run") {
+        isRun = true;
+        generatorTest();
+        cout << endl << "run compeleted" << endl;
+    }
+    else {
+        cout << "command is error" << endl;
+    }
     return 0;
 }

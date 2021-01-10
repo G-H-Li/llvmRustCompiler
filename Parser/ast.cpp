@@ -17,6 +17,8 @@ extern std::unique_ptr<legacy::FunctionPassManager> TheFPM;
 extern std::unique_ptr<llvmRustCompiler::RustJIT> TheJIT;
 extern std::map<std::string, std::unique_ptr<llvmRustCompiler::PrototypeAST>> FunctionProtos;
 
+extern bool isRun;
+
 namespace llvmRustCompiler {
 
 	Function* getFunction(std::string Name) {
@@ -566,7 +568,9 @@ namespace llvmRustCompiler {
 			verifyFunction(*TheFunction);
 
 			// Run the optimizer on the function.
-			TheFPM->run(*TheFunction);
+			if (isRun) {
+				TheFPM->run(*TheFunction);
+			}
 			//void* functionAddr = TheExcution->getPointerToFunction(TheFunction);
 			//std::cout << "address of function: " << std::hex << functionAddr << std::endl;
 			return TheFunction;
